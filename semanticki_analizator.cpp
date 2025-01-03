@@ -96,32 +96,36 @@ bool provjeri_niz_znakova(const string& leks_jedinka) { //provjerava je li niz z
     if (leks_jedinka.front() != '"' || leks_jedinka.back() != '"') { //mora imati " na pocetku i kraju
         return false;
     }
+    bool uspio = true;
     for (size_t i = 1; i < leks_jedinka.length() - 1; ++i) {
         if (leks_jedinka[i] == '\\') { //ako imamo escape sekvencu onda gledamo sljedeci znak
             if (i + 1 < leks_jedinka.length() - 1) { // i je li jedan od znakova koji nam pase
                 char sljedeci = leks_jedinka[i + 1];
                 if (sljedeci != 't' && sljedeci != 'n' && sljedeci != '0' &&
                     sljedeci != '\'' && sljedeci != '\"' && sljedeci != '\\') {
-                    return false;
+                    uspio = false;
+                    break;
                 }
                 ++i;
             } else {
-                return false;
+                uspio = false;
+                break;
             }
         } else {
-            return false;
+            uspio = false;
+            break;
         }
     }
-    return true;
+    return uspio;
 }
 
-bool moze_se_pretvoriti(string from, string to) { //provjerava moze li se tip from pretvoriti u tip to
-    if (from == to) return true;
-    if (from == "char" && to == "int") return true;
-    if (from == "const(char)" && (to == "char" || to == "int" || to == "const(int)")) return true;
-    if (from == "const(int)" && to == "int") return true;
-    if (from == "niz(char)" && to == "niz(const(char))") return true;
-    if (from == "niz(int)" && to == "niz(const(int))") return true;
+bool moze_se_pretvoriti(string prvi, string drugi) { //provjerava moze li se tip from pretvoriti u tip to
+    if (prvi == drugi) return true;
+    if (prvi == "char" && drugi == "int") return true;
+    if (prvi == "const(char)" && (drugi == "char" || drugi == "int" || drugi == "const(int)")) return true;
+    if (prvi == "const(int)" && drugi == "int") return true;
+    if (prvi == "niz(char)" && drugi == "niz(const(char))") return true;
+    if (prvi == "niz(int)" && drugi == "niz(const(int))") return true;
     return false;
 }
 
