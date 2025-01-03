@@ -82,7 +82,7 @@ bool provjeri_tablicu(string leks_jedinka, Tablica_Node* tablica_node){ //provje
     return false;
 }
 
-bool provjeri_znak(const std::string& leks_jedinka) {
+bool provjeri_znak(const string& leks_jedinka) {
     if (leks_jedinka.length() == 3 || 
            (leks_jedinka.length() == 4 && 
             (leks_jedinka == "'\\t'" || leks_jedinka == "'\\n'" || leks_jedinka == "'\\0'" || 
@@ -92,13 +92,13 @@ bool provjeri_znak(const std::string& leks_jedinka) {
     return false;
 }
 
-bool provjeri_niz_znakova(const std::string& leks_jedinka) { //provjerava je li niz znakova ispravno zadan
+bool provjeri_niz_znakova(const string& leks_jedinka) { //provjerava je li niz znakova ispravno zadan
     if (leks_jedinka.front() != '"' || leks_jedinka.back() != '"') { //mora imati " na pocetku i kraju
         return false;
     }
     for (size_t i = 1; i < leks_jedinka.length() - 1; ++i) {
         if (leks_jedinka[i] == '\\') { //ako imamo escape sekvencu onda gledamo sljedeci znak
-            if (i + 1 < leks_jedinka.length() - 1) {
+            if (i + 1 < leks_jedinka.length() - 1) { // i je li jedan od znakova koji nam pase
                 char sljedeci = leks_jedinka[i + 1];
                 if (sljedeci != 't' && sljedeci != 'n' && sljedeci != '0' &&
                     sljedeci != '\'' && sljedeci != '\"' && sljedeci != '\\') {
@@ -115,7 +115,7 @@ bool provjeri_niz_znakova(const std::string& leks_jedinka) { //provjerava je li 
     return true;
 }
 
-bool moze_se_pretvoriti(const std::string& from, const std::string& to) { //provjerava moze li se tip from pretvoriti u tip to
+bool moze_se_pretvoriti(string from, string to) { //provjerava moze li se tip from pretvoriti u tip to
     if (from == to) return true;
     if (from == "char" && to == "int") return true;
     if (from == "const(char)" && (to == "char" || to == "int" || to == "const(int)")) return true;
@@ -183,7 +183,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             }
         }
         else if(node->djeca[0]->svojstva->znak == "BROJ"){ //ako je dijete BROJ
-            long long broj = std::stoll(node->svojstva->leks_jedinka);
+            long long broj = stoll(node->svojstva->leks_jedinka);
             if(!(broj <= INT_MAX && broj >= INT_MIN)){
                 greska();
             }
@@ -193,7 +193,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             }
         }
         else if(node->djeca[0]->svojstva->znak == "ZNAK"){ //ako je dijete ZNAK
-            std::string leks_jedinka = node->svojstva->leks_jedinka;
+            string leks_jedinka = node->svojstva->leks_jedinka;
             if(provjeri_znak(leks_jedinka)){ //ako je ispravan znak, postavi svojstva
                 node->svojstva->tip = "char";
                 node->svojstva->l_izraz = false;
@@ -202,7 +202,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             }
         }
         else if(node->djeca[0]->svojstva->znak == "NIZ_ZNAKOVA"){ //ako je dijete NIZ_ZNAKOVA
-            std::string leks_jedinka = node->svojstva->leks_jedinka;
+            string leks_jedinka = node->svojstva->leks_jedinka;
             if(provjeri_niz_znakova(leks_jedinka)){ //ako je ispravan niz znakova, postavi svojstva
                 node->svojstva->tip = "niz(const(char))";
                 node->svojstva->l_izraz = false;
