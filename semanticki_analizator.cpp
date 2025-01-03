@@ -489,6 +489,34 @@ void multiplikativni_izraz(Node* node, Tablica_Node* tablica_node){
         greska();
     }
 }
+
+void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<multiplikativni_izraz>"){
+        multiplikativni_izraz(node->djeca[0], tablica_node);
+        node->svojstva->tip = node->djeca[0]->svojstva->tip;
+        node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
+    }
+
+    else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<aditivni_izraz>" 
+    && (node->djeca[1]->svojstva->znak == "PLUS" || node->djeca[1]->svojstva->znak == "MINUS")
+    && node->djeca[2]->svojstva->znak == "<multiplikativni_izraz>"){
+        aditivni_izraz(node->djeca[0], tablica_node);
+        multiplikativni_izraz(node->djeca[2], tablica_node);
+        if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
+            greska();
+        }
+        else{
+            node->svojstva->tip = "int";
+            node->svojstva->l_izraz = false;
+        }
+    }
+
+    else{
+        greska();
+    }
+}
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
 
