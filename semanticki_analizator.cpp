@@ -517,6 +517,35 @@ void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
         greska();
     }
 }
+
+void odnosni_izraz(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<aditivni_izraz>"){
+        aditivni_izraz(node->djeca[0], tablica_node);
+        node->svojstva->tip = node->djeca[0]->svojstva->tip;
+        node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
+    }
+
+    else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<odnosni_izraz>" 
+    && (node->djeca[1]->svojstva->znak == "OP_LT" || node->djeca[1]->svojstva->znak == "OP_GT" 
+    || node->djeca[1]->svojstva->znak == "OP_LTE" || node->djeca[1]->svojstva->znak == "OP_GTE")
+    && node->djeca[2]->svojstva->znak == "<aditivni_izraz>"){
+        odnosni_izraz(node->djeca[0], tablica_node);
+        aditivni_izraz(node->djeca[2], tablica_node);
+        if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
+            greska();
+        }
+        else{
+            node->svojstva->tip = "int";
+            node->svojstva->l_izraz = false;
+        }
+    }
+
+    else{
+        greska();
+    }
+}
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
 
