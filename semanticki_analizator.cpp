@@ -55,16 +55,16 @@ class Tablica_Node{
 };
 
 vector<string> split(const string& str, const string& delimiter) {
-    vector<string> tokens;
-    size_t start = 0;
-    size_t end = str.find(delimiter);
-    while (end != string::npos) {
-        tokens.push_back(str.substr(start, end - start));
-        start = end + delimiter.length();
-        end = str.find(delimiter, start);
+    vector<string> dijelovi;
+    size_t pocetak = 0;
+    size_t kraj = str.find(delimiter);
+    while (kraj != string::npos) {
+        dijelovi.push_back(str.substr(pocetak, kraj - pocetak));
+        pocetak = kraj + delimiter.length();
+        kraj = str.find(delimiter, pocetak);
     }
-    tokens.push_back(str.substr(start));
-    return tokens;
+    dijelovi.push_back(str.substr(pocetak));
+    return dijelovi;
 }
 
 void greska(){ //napraviti funkciju za ispis greske
@@ -83,10 +83,13 @@ bool provjeri_tablicu(string leks_jedinka, Tablica_Node* tablica_node){ //provje
 }
 
 bool provjeri_znak(const std::string& leks_jedinka) {
-    return leks_jedinka.length() == 3 || 
+    if (leks_jedinka.length() == 3 || 
            (leks_jedinka.length() == 4 && 
             (leks_jedinka == "'\\t'" || leks_jedinka == "'\\n'" || leks_jedinka == "'\\0'" || 
-             leks_jedinka == "'\\''" || leks_jedinka == "'\\\"'" || leks_jedinka == "'\\\\'"));
+             leks_jedinka == "'\\''" || leks_jedinka == "'\\\"'" || leks_jedinka == "'\\\\'"))){
+                return true;
+    }
+    return false;
 }
 
 bool provjeri_niz_znakova(const std::string& leks_jedinka) { //provjerava je li niz znakova ispravno zadan
@@ -96,16 +99,16 @@ bool provjeri_niz_znakova(const std::string& leks_jedinka) { //provjerava je li 
     for (size_t i = 1; i < leks_jedinka.length() - 1; ++i) {
         if (leks_jedinka[i] == '\\') { //ako imamo escape sekvencu onda gledamo sljedeci znak
             if (i + 1 < leks_jedinka.length() - 1) {
-                char next_char = leks_jedinka[i + 1];
-                if (next_char != 't' && next_char != 'n' && next_char != '0' &&
-                    next_char != '\'' && next_char != '\"' && next_char != '\\') {
+                char sljedeci = leks_jedinka[i + 1];
+                if (sljedeci != 't' && sljedeci != 'n' && sljedeci != '0' &&
+                    sljedeci != '\'' && sljedeci != '\"' && sljedeci != '\\') {
                     return false;
                 }
-                ++i; // Skip the next character as it is part of the escape sequence
+                ++i;
             } else {
                 return false;
             }
-        } else if (!isprint(leks_jedinka[i])) { //ako nije isprintabilan znak onda nije ispravan (moguce nije potrebno)
+        } else {
             return false;
         }
     }
