@@ -1202,6 +1202,53 @@ void lista_init_deklaratora(Node* node, Tablica_Node* tablica_node){
         greska();
     }
 }
+
+void init_deklarator(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izravni_deklarator>"){
+        node->djeca[0]->svojstva->ntip = node->svojstva->ntip;
+        izravni_deklarator(node->djeca[0], tablica_node);
+
+        if(node->djeca[0]->svojstva->konst){
+            greska();
+        }
+    }
+
+    else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<izravni_deklarator>" 
+    && node->djeca[1]->svojstva->znak == "OP_PRIDRUZI" && node->djeca[2]->svojstva->znak == "<inicijalizator>"){
+        node->djeca[0]->svojstva->ntip = node->svojstva->ntip;
+        izravni_deklarator(node->djeca[0], tablica_node);
+        inicijalizator(node->djeca[2], tablica_node);
+
+        string tip_deklrator = node->djeca[0]->svojstva->tip;
+        string tip_inicijalizator = node->djeca[2]->svojstva->tip;
+        if (tip_deklrator.substr(0, 4) != "niz(" && (tip_deklrator == tip_inicijalizator 
+        || (tip_deklrator.substr(0, 6) == "const(" && tip_deklrator.substr(6, tip_deklrator.size() - 7) == tip_inicijalizator))) {
+            // Provjera za T ili const(T)
+            if (!moze_se_pretvoriti(tip_inicijalizator, tip_deklrator)) {
+                greska();
+            }
+        } else if (tip_deklrator.substr(0, 4) == "niz(") {
+            // Provjera za niz(T) ili niz(const(T))
+            string element_tip = tip_deklrator.substr(4, tip_deklrator.size() - 5);
+            if (node->djeca[2]->svojstva->br_elem > node->djeca[0]->svojstva->br_elem) {
+                greska();
+            }
+            for (const string& u : node->djeca[2]->svojstva->tipovi) {
+                if (!moze_se_pretvoriti(u, element_tip)) {
+                    greska();
+                }
+            }
+        } else {
+            greska();
+        }
+    }
+
+    else{
+        greska();
+    }
+}
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
 
