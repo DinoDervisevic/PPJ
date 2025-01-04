@@ -19,8 +19,10 @@ class Node_svojstva{
         string leks_jedinka = ""; //origigi sto pise (a, 12, +...)
         bool konst;
         string tip = "";
+        string ntip = ""; //nasljedni tip bitan za provjeru tocnosti deklaracija
         bool l_izraz = "";
         vector<string> argumenti = {};
+        vector<string> argumenti_imena = {};
 
         Node_svojstva(string znak, int redak, string leks_jedinka) : znak(znak), redak(redak), leks_jedinka(leks_jedinka), konst(false) {}
 
@@ -1017,13 +1019,15 @@ void vanjska_deklaracija(Node* node, Tablica_Node* tablica_node){
 void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
     if(node->svojstva == nullptr) greska();
 
-    Tablica_Node* nova_tablica = new Tablica_Node(tablica_node);
-
     if(node->djeca.size() == 6 && node->djeca[0]->svojstva->znak == "<ime_tipa>" 
     && node->djeca[1]->svojstva->znak == "IDN" && node->djeca[2]->svojstva->znak == "L_ZAGRADA"
     && node->djeca[3]->svojstva->znak == "KR_VOID" && node->djeca[4]->svojstva->znak == "D_ZAGRADA"
     && node->djeca[5]->svojstva->znak == "<slozena_naredba>"){
         ime_tipa(node->djeca[0], tablica_node);
+        if(node->djeca[0]->svojstva->konst){
+            greska();
+        }
+
         Node* prijasnja_definicija = provjeri_tablicu(node->djeca[1]->svojstva->leks_jedinka, tablica_node);
         if(prijasnja_definicija != nullptr){
             if(prijasnja_definicija->svojstva->argumenti.size() != 0){
@@ -1034,11 +1038,12 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
                 greska();
             }
         }
+
         node->svojstva->tip = "funkcija() -> " + node->djeca[0]->svojstva->tip;
         node->svojstva->argumenti = {};
         node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
         tablica_node->zapis.insert({node->djeca[1]->svojstva->leks_jedinka, node});
-        slozena_naredba(node->djeca[5], nova_tablica);
+        slozena_naredba(node->djeca[5], tablica_node);
     }
 
     else if(node->djeca.size() == 6 && node->djeca[0]->svojstva->znak == "<ime_tipa>"
@@ -1046,6 +1051,10 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
     && node->djeca[3]->svojstva->znak == "<lista_parametara>" && node->djeca[4]->svojstva->znak == "D_ZAGRADA"
     && node->djeca[5]->svojstva->znak == "<slozena_naredba>"){
         ime_tipa(node->djeca[0], tablica_node);
+        if(node->djeca[0]->svojstva->konst){
+            greska();
+        }
+
         lista_parametara(node->djeca[3], tablica_node);
         Node* prijasnja_definicija = provjeri_tablicu(node->djeca[1]->svojstva->leks_jedinka, tablica_node);
         if(prijasnja_definicija != nullptr){
@@ -1062,6 +1071,7 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
                 greska();
             }
         }
+
         node->svojstva->tip = "funkcija(";
         for(int i = 0; i < node->djeca[3]->svojstva->argumenti.size(); i++){
             node->svojstva->tip += node->djeca[3]->svojstva->argumenti[i];
@@ -1070,11 +1080,124 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
             }
         }
         node->svojstva->tip += ") -> " + node->djeca[0]->svojstva->tip;
+
         node->svojstva->argumenti = node->djeca[3]->svojstva->argumenti;
         node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
         tablica_node->zapis.insert({node->djeca[1]->svojstva->leks_jedinka, node});
-        slozena_naredba(node->djeca[5], nova_tablica);
+        slozena_naredba(node->djeca[5], tablica_node);
     }
+    else{
+        greska();
+    }
+}
+
+void lista_parametara(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<deklaracija_parametra>"){
+        deklaracija_parametra(node->djeca[0], tablica_node);
+        node->svojstva->argumenti.push_back(node->djeca[0]->svojstva->tip);
+        node->svojstva->argumenti_imena.push_back(node->djeca[0]->svojstva->leks_jedinka);
+    }
+
+    else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<lista_parametara>" 
+    && node->djeca[1]->svojstva->znak == "ZAREZ" && node->djeca[2]->svojstva->znak == "<deklaracija_parametra>"){
+        lista_parametara(node->djeca[0], tablica_node);
+        deklaracija_parametra(node->djeca[2], tablica_node);
+        for(int i = 0; i < node->djeca[0]->svojstva->argumenti_imena.size(); i++){
+            if(node->djeca[0]->svojstva->argumenti_imena[i] == node->djeca[2]->svojstva->leks_jedinka){
+                greska();
+            }
+        }
+        node->svojstva->argumenti = node->djeca[0]->svojstva->argumenti;
+        node->svojstva->argumenti.push_back(node->djeca[2]->svojstva->tip);
+        node->svojstva->argumenti_imena = node->djeca[0]->svojstva->argumenti_imena;
+        node->svojstva->argumenti_imena.push_back(node->djeca[2]->svojstva->leks_jedinka);
+    }
+
+    else{
+        greska();
+    }
+}
+
+void deklaracija_parametra(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 2 && node->djeca[0]->svojstva->znak == "<ime_tipa>" 
+    && node->djeca[1]->svojstva->znak == "IDN"){
+        ime_tipa(node->djeca[0], tablica_node);
+        if(node->djeca[0]->svojstva->tip == "void"){
+            greska();
+        }
+        node->svojstva->tip = node->djeca[0]->svojstva->tip;
+        node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
+    }
+
+    else if(node->djeca.size() == 4 && node->djeca[0]->svojstva->znak == "<ime_tipa>"
+    && node->djeca[1]->svojstva->znak == "IDN" && node->djeca[2]->svojstva->znak == "L_UGL_ZAGRADA"
+    && node->djeca[3]->svojstva->znak == "D_UGL_ZAGRADA"){
+        ime_tipa(node->djeca[0], tablica_node);
+        if(node->djeca[0]->svojstva->tip == "void"){
+            greska();
+        }
+        node->svojstva->tip = "niz(" + node->djeca[0]->svojstva->tip + ")";
+        node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
+    }
+
+    else{
+        greska();
+    }
+}
+
+void lista_deklaracija(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<deklaracija>"){
+        deklaracija(node->djeca[0], tablica_node);
+    }
+
+    else if(node->djeca.size() == 2 && node->djeca[0]->svojstva->znak == "<lista_deklaracija>" 
+    && node->djeca[1]->svojstva->znak == "<deklaracija>"){
+        lista_deklaracija(node->djeca[0], tablica_node);
+        deklaracija(node->djeca[1], tablica_node);
+    }
+
+    else{
+        greska();
+    }
+}
+
+void deklaracija(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<ime_tipa>" 
+    && node->djeca[1]->svojstva->znak == "<lista_init_deklaratora>" && node->djeca[2]->svojstva->znak == "TOCKAZAREZ"){
+        ime_tipa(node->djeca[0], tablica_node);
+        node->djeca[1]->svojstva->ntip = node->djeca[0]->svojstva->tip;
+        lista_init_deklaratora(node->djeca[1], tablica_node);
+    }
+
+    else{
+        greska();
+    }
+}
+
+void lista_init_deklaratora(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<init_deklarator>"){
+        node->djeca[0]->svojstva->ntip = node->svojstva->ntip;
+        init_deklarator(node->djeca[0], tablica_node);
+    }
+
+    else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<lista_init_deklaratora>" 
+    && node->djeca[1]->svojstva->znak == "ZAREZ" && node->djeca[2]->svojstva->znak == "<init_deklarator>"){
+        node->djeca[0]->svojstva->ntip = node->svojstva->ntip;
+        node->djeca[2]->svojstva->ntip = node->svojstva->ntip;
+        lista_init_deklaratora(node->djeca[0], tablica_node);
+        init_deklarator(node->djeca[2], tablica_node);
+    }
+
     else{
         greska();
     }
