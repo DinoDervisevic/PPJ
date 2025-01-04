@@ -52,6 +52,8 @@ class Tablica_Node{
     public:
         map<string, Tablica_Zapis*> zapis;
         Tablica_Node* roditelj = nullptr;
+
+        Tablica_Node(Tablica_Node* roditelj = nullptr) : roditelj(roditelj) {}
 };
 
 vector<string> split(const string& str, const string& delimiter) {
@@ -127,6 +129,26 @@ bool moze_se_pretvoriti(string prvi, string drugi) { //provjerava moze li se tip
     if (prvi == "niz(char)" && drugi == "niz(const(char))") return true;
     if (prvi == "niz(int)" && drugi == "niz(const(int))") return true;
     return false;
+}
+
+bool jel_u_petlji(Node* node){
+    while(node != nullptr){
+        if(node->svojstva->znak == "<naredba_petlje>"){
+            return true;
+        }
+        node = node->roditelj;
+    }
+    return false;
+}
+
+string jel_u_funkciji(Node* node){
+    while(node != nullptr){
+        if(node->svojstva->znak == "<definicija_funkcije>"){
+            return "true";
+        }
+        node = node->roditelj;
+    }
+    return "";
 }
 
 
@@ -756,6 +778,196 @@ void izraz(Node* node, Tablica_Node* tablica_node){
         izraz_pridruzivanja(node->djeca[2], tablica_node);
         node->svojstva->tip = node->djeca[2]->svojstva->tip;
         node->svojstva->l_izraz = false;
+    }
+
+    else{
+        greska();
+    }
+}
+
+void slozena_naredba(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    Tablica_Node* nova_tablica = new Tablica_Node(tablica_node);
+
+    if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
+    && node->djeca[1]->svojstva->znak == "<lista_naredbi>" && node->djeca[2]->svojstva->znak == "D_VIT_ZAGRADA"){
+        lista_naredbi(node->djeca[1], nova_tablica);
+    }
+
+    else if(node->djeca.size() == 5 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
+    && node->djeca[1]->svojstva->znak == "<lista_deklaracija>" && node->djeca[2]->svojstva->znak == "<lista_naredbi>"
+    && node->djeca[3]->svojstva->znak == "D_VIT_ZAGRADA"){
+        lista_deklaracija(node->djeca[1], nova_tablica);
+        lista_naredbi(node->djeca[2], nova_tablica);
+    }
+
+    else{
+        greska();
+    }
+}
+
+void lista_naredbi(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<naredba>"){
+        naredba(node->djeca[0], tablica_node);
+    }
+
+    else if(node->djeca.size() == 2 && node->djeca[0]->svojstva->znak == "<lista_naredbi>" 
+    && node->djeca[1]->svojstva->znak == "<naredba>"){
+        lista_naredbi(node->djeca[0], tablica_node);
+        naredba(node->djeca[1], tablica_node);
+    }
+
+    else{
+        greska();
+    }
+}
+
+void naredba(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<slozena_naredba>"){
+        slozena_naredba(node->djeca[0], tablica_node);
+    }
+
+    else if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izraz_naredba>"){
+        izraz_naredba(node->djeca[0], tablica_node);
+    }
+
+    else if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<naredba_grananja>"){
+        naredba_grananja(node->djeca[0], tablica_node);
+    }
+
+    else if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<naredba_petlje>"){
+        naredba_petlje(node->djeca[0], tablica_node);
+    }
+
+    else if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<naredba_skoka>"){
+        naredba_skoka(node->djeca[0], tablica_node);
+    }
+
+    else{
+        greska();
+    }
+}
+
+void izraz_naredba(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 2 && node->djeca[0]->svojstva->znak == "<izraz>" 
+    && node->djeca[1]->svojstva->znak == "TOCKAZAREZ"){
+        izraz(node->djeca[0], tablica_node);
+        node->svojstva->tip = node->djeca[0]->svojstva->tip;
+    }
+
+    else if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "TOCKAZAREZ"){
+        node->svojstva->tip = "int";
+    }
+
+    else{
+        greska();
+    }
+}
+
+void naredba_grananja(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 5 && node->djeca[0]->svojstva->znak == "KR_IF" 
+    && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<izraz>"
+    && node->djeca[3]->svojstva->znak == "D_ZAGRADA" && node->djeca[4]->svojstva->znak == "<naredba>"){
+        izraz(node->djeca[2], tablica_node);
+        if(!moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
+            greska();
+        }
+        naredba(node->djeca[4], tablica_node);
+    }
+
+    else if(node->djeca.size() == 7 && node->djeca[0]->svojstva->znak == "KR_IF" 
+    && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<izraz>"
+    && node->djeca[3]->svojstva->znak == "D_ZAGRADA" && node->djeca[4]->svojstva->znak == "<naredba>"
+    && node->djeca[5]->svojstva->znak == "KR_ELSE" && node->djeca[6]->svojstva->znak == "<naredba>"){
+        izraz(node->djeca[2], tablica_node);
+        if(!moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
+            greska();
+        }
+        naredba(node->djeca[4], tablica_node);
+        naredba(node->djeca[6], tablica_node);
+    }
+
+    else{
+        greska();
+    }
+}
+
+void naredba_petlje(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 5 && node->djeca[0]->svojstva->znak == "KR_WHILE" 
+    && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<izraz>"
+    && node->djeca[3]->svojstva->znak == "D_ZAGRADA" && node->djeca[4]->svojstva->znak == "<naredba>"){
+        izraz(node->djeca[2], tablica_node);
+        if(!moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
+            greska();
+        }
+        naredba(node->djeca[4], tablica_node);
+    }
+
+    else if(node->djeca.size() == 6 && node->djeca[0]->svojstva->znak == "KR_FOR" 
+    && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<izraz_naredba>"
+    && node->djeca[3]->svojstva->znak == "<izraz_naredba>" && node->djeca[4]->svojstva->znak == "D_ZAGRADA"
+    && node->djeca[5]->svojstva->znak == "<naredba>"){
+        izraz_naredba(node->djeca[2], tablica_node);
+        izraz_naredba(node->djeca[3], tablica_node);
+        if(!moze_se_pretvoriti(node->djeca[3]->svojstva->tip, "int")){
+            greska();
+        }
+        naredba(node->djeca[5], tablica_node);
+    }
+
+    else if(node->djeca.size() == 7 && node->djeca[0]->svojstva->znak == "KR_FOR"
+    && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<izraz_naredba>"
+    && node->djeca[3]->svojstva->znak == "<izraz_naredba>" && node->djeca[4]->svojstva->znak == "<izraz>"
+    && node->djeca[5]->svojstva->znak == "D_ZAGRADA" && node->djeca[6]->svojstva->znak == "<naredba>"){
+        izraz_naredba(node->djeca[2], tablica_node);
+        izraz_naredba(node->djeca[3], tablica_node);
+        if(!moze_se_pretvoriti(node->djeca[3]->svojstva->tip, "int")){
+            greska();
+        }
+        izraz(node->djeca[4], tablica_node);
+        naredba(node->djeca[6], tablica_node);
+    }
+
+    else{
+        greska();
+    }
+}
+
+void naredba_skoka(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 2 && (node->djeca[0]->svojstva->znak == "KR_CONTINUE" 
+    || node->djeca[0]->svojstva->znak == "KR_BREAK")
+    && node->djeca[1]->svojstva->znak == "TOCKAZAREZ"){
+        if(!jel_u_petlji(node)){
+            greska();
+        }
+        node->svojstva->tip = "int";
+    }
+
+    else if(node->djeca.size() == 2 && node->djeca[0]->svojstva->znak == "KR_RETURN"
+    && node->djeca[1]->svojstva->znak == "TOCKAZAREZ"){
+        if(jel_u_funkciji(node) == ""){
+            greska();
+        }
+        node->svojstva->tip = "int";
+    }
+
+    else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "KR_RETURN"
+    && node->djeca[1]->svojstva->znak == "<izraz>" && node->djeca[2]->svojstva->znak == "TOCKAZAREZ"){
+        izraz(node->djeca[1], tablica_node);
+        node->svojstva->tip = node->djeca[1]->svojstva->tip;
     }
 
     else{
