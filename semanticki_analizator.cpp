@@ -67,15 +67,15 @@ void greska(){ //napraviti funkciju za ispis greske
     cout << "0" << endl;
 }
 
-bool provjeri_tablicu(string leks_jedinka, Tablica_Node* tablica_node){ //provjerava postoji li leks_jedinka u tablici ili njenim roditeljima
+Node* provjeri_tablicu(string leks_jedinka, Tablica_Node* tablica_node){ //provjerava postoji li leks_jedinka u tablici ili njenim roditeljima
     Tablica_Node* trenutna_tablica = tablica_node;
     while(trenutna_tablica != nullptr){
         if(trenutna_tablica->zapis.find(leks_jedinka) != trenutna_tablica->zapis.end()){
-            return true;
+            return trenutna_tablica->zapis[leks_jedinka];
         }
         trenutna_tablica = trenutna_tablica->roditelj;
     }
-    return false;
+    return nullptr;
 }
 
 bool provjeri_znak(const string& leks_jedinka) {
@@ -203,7 +203,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
     if(node->svojstva == nullptr) greska();
     if(node->djeca.size() == 1){
         if(node->djeca[0]->svojstva->znak == "IDN"){ //ako je dijete IDN
-            if(!provjeri_tablicu(node->djeca[0]->svojstva->leks_jedinka, tablica_node)){
+            if(provjeri_tablicu(node->djeca[0]->svojstva->leks_jedinka, tablica_node) == nullptr){ //ako ne postoji u tablici
                 greska();
             }
             else{ //ako postoji u tablici, postavi svojstva
@@ -1009,6 +1009,72 @@ void vanjska_deklaracija(Node* node, Tablica_Node* tablica_node){
         deklaracija(node->djeca[0], tablica_node);
     }
 
+    else{
+        greska();
+    }
+}
+
+void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    Tablica_Node* nova_tablica = new Tablica_Node(tablica_node);
+
+    if(node->djeca.size() == 6 && node->djeca[0]->svojstva->znak == "<ime_tipa>" 
+    && node->djeca[1]->svojstva->znak == "IDN" && node->djeca[2]->svojstva->znak == "L_ZAGRADA"
+    && node->djeca[3]->svojstva->znak == "KR_VOID" && node->djeca[4]->svojstva->znak == "D_ZAGRADA"
+    && node->djeca[5]->svojstva->znak == "<slozena_naredba>"){
+        ime_tipa(node->djeca[0], tablica_node);
+        Node* prijasnja_definicija = provjeri_tablicu(node->djeca[1]->svojstva->leks_jedinka, tablica_node);
+        if(prijasnja_definicija != nullptr){
+            if(prijasnja_definicija->svojstva->argumenti.size() != 0){
+                greska();
+            }
+            if(prijasnja_definicija->svojstva->tip.find(" -> ") != string::npos 
+            || split(prijasnja_definicija->svojstva->tip, " -> ")[1] != node->djeca[0]->svojstva->tip){
+                greska();
+            }
+        }
+        node->svojstva->tip = "funkcija() -> " + node->djeca[0]->svojstva->tip;
+        node->svojstva->argumenti = {};
+        node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
+        tablica_node->zapis.insert({node->djeca[1]->svojstva->leks_jedinka, node});
+        slozena_naredba(node->djeca[5], nova_tablica);
+    }
+
+    else if(node->djeca.size() == 6 && node->djeca[0]->svojstva->znak == "<ime_tipa>"
+    && node->djeca[1]->svojstva->znak == "IDN" && node->djeca[2]->svojstva->znak == "L_ZAGRADA"
+    && node->djeca[3]->svojstva->znak == "<lista_parametara>" && node->djeca[4]->svojstva->znak == "D_ZAGRADA"
+    && node->djeca[5]->svojstva->znak == "<slozena_naredba>"){
+        ime_tipa(node->djeca[0], tablica_node);
+        lista_parametara(node->djeca[3], tablica_node);
+        Node* prijasnja_definicija = provjeri_tablicu(node->djeca[1]->svojstva->leks_jedinka, tablica_node);
+        if(prijasnja_definicija != nullptr){
+            if(prijasnja_definicija->svojstva->argumenti.size() != node->djeca[3]->svojstva->argumenti.size()){
+                greska();
+            }
+            for(int i = 0; i < node->djeca[3]->svojstva->argumenti.size(); i++){
+                if(prijasnja_definicija->svojstva->argumenti[i] != node->djeca[3]->svojstva->argumenti[i]){
+                    greska();
+                }
+            }
+            if(prijasnja_definicija->svojstva->tip.find(" -> ") != string::npos 
+            || split(prijasnja_definicija->svojstva->tip, " -> ")[1] != node->djeca[0]->svojstva->tip){
+                greska();
+            }
+        }
+        node->svojstva->tip = "funkcija(";
+        for(int i = 0; i < node->djeca[3]->svojstva->argumenti.size(); i++){
+            node->svojstva->tip += node->djeca[3]->svojstva->argumenti[i];
+            if(i != node->djeca[3]->svojstva->argumenti.size() - 1){
+                node->svojstva->tip += ", ";
+            }
+        }
+        node->svojstva->tip += ") -> " + node->djeca[0]->svojstva->tip;
+        node->svojstva->argumenti = node->djeca[3]->svojstva->argumenti;
+        node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
+        tablica_node->zapis.insert({node->djeca[1]->svojstva->leks_jedinka, node});
+        slozena_naredba(node->djeca[5], nova_tablica);
+    }
     else{
         greska();
     }
