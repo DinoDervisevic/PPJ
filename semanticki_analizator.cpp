@@ -42,15 +42,9 @@ class Node{
 
 };
 
-struct Tablica_Zapis{
-    string ime = "";
-    string tip = "";
-
-};
-
 class Tablica_Node{
     public:
-        map<string, Tablica_Zapis*> zapis;
+        map<string, Node*> zapis;
         Tablica_Node* roditelj = nullptr;
 
         Tablica_Node(Tablica_Node* roditelj = nullptr) : roditelj(roditelj) {}
@@ -144,12 +138,21 @@ bool jel_u_petlji(Node* node){
 string jel_u_funkciji(Node* node){
     while(node != nullptr){
         if(node->svojstva->znak == "<definicija_funkcije>"){
-            return "true";
+            string povratni_tip = split(node->svojstva->tip, " -> ")[1];
+            return povratni_tip;
         }
         node = node->roditelj;
     }
     return "";
 }
+
+void naslijedi_svojstva(Node* dijete, Node* roditelj){
+    dijete->svojstva = new Node_svojstva();
+    dijete->svojstva->tip = roditelj->svojstva->tip;
+    dijete->svojstva->l_izraz = roditelj->svojstva->l_izraz;
+    dijete->svojstva->konst = roditelj->svojstva->konst;
+    dijete->svojstva->argumenti = roditelj->svojstva->argumenti;
+}	
 
 
 //------------------------------------------------------------------------------------------------
@@ -204,8 +207,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                 greska();
             }
             else{ //ako postoji u tablici, postavi svojstva
-                node->svojstva->tip = node->djeca[0]->svojstva->tip;
-                node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
+                naslijedi_svojstva(node, tablica_node->zapis[node->djeca[0]->svojstva->leks_jedinka]);
             }
         }
         else if(node->djeca[0]->svojstva->znak == "BROJ"){ //ako je dijete BROJ
@@ -296,8 +298,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
             greska();
         }
         else{
-            string argumenti = node->djeca[0]->svojstva->tip.substr(9, node->djeca[0]->svojstva->tip.size()-10);
-            if(argumenti != "void"){
+            if(!node->djeca[0]->svojstva->argumenti.empty()){
                 greska();
             }
             else{
@@ -316,18 +317,15 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
             greska();
         }
         else{
-            string argumenti = node->djeca[0]->svojstva->tip.substr(9, node->djeca[0]->svojstva->tip.size()-10);
-            if(argumenti == "void"){
+            if(node->djeca[0]->svojstva->argumenti.empty()){
                 greska();
             }
             else{
-                lista_argumenata(node->djeca[2], tablica_node);
-                vector<string> argumenti_funkcije = split(argumenti, ", ");
-                if(argumenti_funkcije.size() != node->djeca[2]->djeca.size()){
+                if(node->djeca[0]->svojstva->argumenti.size() != node->djeca[2]->djeca.size()){
                     greska();
                 }
-                for(int i = 0; i < argumenti_funkcije.size(); i++){
-                    if(!moze_se_pretvoriti(node->djeca[2]->djeca[i]->svojstva->tip, argumenti_funkcije[i])){
+                for(int i = 0; i < node->djeca[0]->svojstva->argumenti.size(); i++){
+                    if(!moze_se_pretvoriti(node->djeca[2]->djeca[i]->svojstva->tip, node->djeca[0]->svojstva->argumenti[i])){
                         greska();
                     }
                 }
@@ -958,7 +956,8 @@ void naredba_skoka(Node* node, Tablica_Node* tablica_node){
 
     else if(node->djeca.size() == 2 && node->djeca[0]->svojstva->znak == "KR_RETURN"
     && node->djeca[1]->svojstva->znak == "TOCKAZAREZ"){
-        if(jel_u_funkciji(node) == ""){
+        string tip = jel_u_funkciji(node);
+        if(tip != "void"){
             greska();
         }
         node->svojstva->tip = "int";
@@ -966,8 +965,48 @@ void naredba_skoka(Node* node, Tablica_Node* tablica_node){
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "KR_RETURN"
     && node->djeca[1]->svojstva->znak == "<izraz>" && node->djeca[2]->svojstva->znak == "TOCKAZAREZ"){
+        string tip = jel_u_funkciji(node);
+        if(tip == "void"){
+            greska();
+        }
         izraz(node->djeca[1], tablica_node);
-        node->svojstva->tip = node->djeca[1]->svojstva->tip;
+        node->svojstva->tip = tip;
+    }
+
+    else{
+        greska();
+    }
+}
+
+void prijevodna_jedinica(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    Tablica_Node* nova_tablica = new Tablica_Node(tablica_node);
+
+    if(node->djeca.size() == 2 && node->djeca[0]->svojstva->znak == "<prijevodna_jedinica>" 
+    && node->djeca[1]->svojstva->znak == "<vanjska_deklaracija>"){
+        prijevodna_jedinica(node->djeca[0], nova_tablica);
+        vanjska_deklaracija(node->djeca[1], nova_tablica);
+    }
+
+    else if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<vanjska_deklaracija>"){
+        vanjska_deklaracija(node->djeca[0], nova_tablica);
+    }
+
+    else{
+        greska();
+    }
+}
+
+void vanjska_deklaracija(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<definicija_funkcije>"){
+        definicija_funkcije(node->djeca[0], tablica_node);
+    }
+
+    else if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<deklaracija>"){
+        deklaracija(node->djeca[0], tablica_node);
     }
 
     else{
