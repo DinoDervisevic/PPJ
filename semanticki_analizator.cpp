@@ -17,12 +17,14 @@ class Node_svojstva{
         string znak = ""; //uniformni znak(tipa IDN, BROJ...)
         int redak = -1;
         string leks_jedinka = ""; //origigi sto pise (a, 12, +...)
-        bool konst;
+        bool konst = false; //true je i ako je niz(const(tip))
         string tip = "";
         string ntip = ""; //nasljedni tip bitan za provjeru tocnosti deklaracija
         bool l_izraz = "";
-        vector<string> argumenti = {};
-        vector<string> argumenti_imena = {};
+        vector<string> argumenti = {}; //samo za funkcije
+        vector<string> argumenti_imena = {}; //isto za funkcije
+        int broj_elemenata = 0; //samo za deklaracije nizova
+        vector<string> tipovi = {}; //samo za inicijalizaciju nizova (tj <inicijalizator>)
 
         Node_svojstva(string znak, int redak, string leks_jedinka) : znak(znak), redak(redak), leks_jedinka(leks_jedinka), konst(false) {}
 
@@ -76,6 +78,13 @@ Node* provjeri_tablicu(string leks_jedinka, Tablica_Node* tablica_node){ //provj
             return trenutna_tablica->zapis[leks_jedinka];
         }
         trenutna_tablica = trenutna_tablica->roditelj;
+    }
+    return nullptr;
+}
+
+Node* provjeri_tablicu_lokalno(string leks_jedinka, Tablica_Node* tablica_node){ //provjerava postoji li leks_jedinka u trenutnoj tablici
+    if(tablica_node->zapis.find(leks_jedinka) != tablica_node->zapis.end()){
+        return tablica_node->zapis[leks_jedinka];
     }
     return nullptr;
 }
@@ -1225,14 +1234,14 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
         string tip_inicijalizator = node->djeca[2]->svojstva->tip;
         if (tip_deklrator.substr(0, 4) != "niz(" && (tip_deklrator == tip_inicijalizator 
         || (tip_deklrator.substr(0, 6) == "const(" && tip_deklrator.substr(6, tip_deklrator.size() - 7) == tip_inicijalizator))) {
-            // Provjera za T ili const(T)
+
             if (!moze_se_pretvoriti(tip_inicijalizator, tip_deklrator)) {
                 greska();
             }
         } else if (tip_deklrator.substr(0, 4) == "niz(") {
-            // Provjera za niz(T) ili niz(const(T))
+
             string element_tip = tip_deklrator.substr(4, tip_deklrator.size() - 5);
-            if (node->djeca[2]->svojstva->br_elem > node->djeca[0]->svojstva->br_elem) {
+            if (node->djeca[2]->svojstva->broj_elemenata > node->djeca[0]->svojstva->broj_elemenata) {
                 greska();
             }
             for (const string& u : node->djeca[2]->svojstva->tipovi) {
@@ -1245,6 +1254,105 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
         }
     }
 
+    else{
+        greska();
+    }
+}
+
+void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "IDN"){
+        node->svojstva->tip = node->svojstva->ntip;
+        node->svojstva->leks_jedinka = node->djeca[0]->svojstva->leks_jedinka;
+
+        if(node->svojstva->tip == "void"){
+            greska();
+        }
+        if(provjeri_tablicu_lokalno(node->djeca[0]->svojstva->leks_jedinka, tablica_node) != nullptr){
+            greska();
+        }
+
+        tablica_node->zapis.insert({node->djeca[0]->svojstva->leks_jedinka, node});
+    }
+
+    else if(node->djeca.size() == 4 && node->djeca[0]->svojstva->znak == "IDN" 
+    && node->djeca[1]->svojstva->znak == "L_UGL_ZAGRADA" && node->djeca[2]->svojstva->znak == "BROJ"
+    && node->djeca[3]->svojstva->znak == "D_UGL_ZAGRADA"){
+        if(node->djeca[2]->svojstva->tip != "int" || stoi(node->djeca[2]->svojstva->leks_jedinka) <= 0
+        || stoi(node->djeca[2]->svojstva->leks_jedinka) > 1024){
+            greska();
+        }
+        if(provjeri_tablicu_lokalno(node->djeca[0]->svojstva->leks_jedinka, tablica_node) != nullptr){
+            greska();
+        }
+        if(node->svojstva->ntip == "void"){
+            greska();
+        }
+
+        node->svojstva->tip = "niz(" + node->svojstva->ntip + ")";
+        node->svojstva->leks_jedinka = node->djeca[0]->svojstva->leks_jedinka;
+        node->svojstva->broj_elemenata = stoi(node->svojstva->leks_jedinka);
+
+        tablica_node->zapis.insert({node->djeca[0]->svojstva->leks_jedinka, node});
+    }
+
+    else if(node->djeca.size() == 4 && node->djeca[0]->svojstva->znak == "IDN"
+    && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "KR_VOID"
+    && node->djeca[3]->svojstva->znak == "D_ZAGRADA"){
+        Node* prijasnja_definicija = provjeri_tablicu(node->djeca[0]->svojstva->leks_jedinka, tablica_node);
+        if(prijasnja_definicija != nullptr){
+            if(prijasnja_definicija->svojstva->argumenti.size() != 0){
+                greska();
+            }
+            if(prijasnja_definicija->svojstva->tip.find(" -> ") == string::npos
+            || split(prijasnja_definicija->svojstva->tip, " -> ")[1] != node->svojstva->ntip
+            || prijasnja_definicija->svojstva->tip.find("funkcija(") == string::npos){
+                greska();
+            }
+        }
+
+        node->svojstva->tip = "funkcija() -> " + node->svojstva->ntip;
+        node->svojstva->leks_jedinka = node->djeca[0]->svojstva->leks_jedinka;
+
+        tablica_node->zapis.insert({node->svojstva->leks_jedinka, node});
+    }
+
+    else if(node->djeca.size() == 4 && node->djeca[0]->svojstva->znak == "IDN"
+    && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<lista_parametara>"
+    && node->djeca[3]->svojstva->znak == "D_ZAGRADA"){
+        lista_parametara(node->djeca[2], tablica_node);
+        Node* prijasnja_definicija = provjeri_tablicu(node->djeca[0]->svojstva->leks_jedinka, tablica_node);
+        if(prijasnja_definicija != nullptr){
+            if(prijasnja_definicija->svojstva->argumenti.size() != node->djeca[2]->svojstva->argumenti.size()){
+                greska();
+            }
+            for(int i = 0; i < node->djeca[2]->svojstva->argumenti.size(); i++){
+                if(prijasnja_definicija->svojstva->argumenti[i] != node->djeca[2]->svojstva->argumenti[i]){
+                    greska();
+                }
+            }
+            if(prijasnja_definicija->svojstva->tip.find(" -> ") == string::npos
+            || split(prijasnja_definicija->svojstva->tip, " -> ")[1] != node->svojstva->ntip
+            || prijasnja_definicija->svojstva->tip.find("funkcija(") == string::npos){
+                greska();
+            }
+        }
+
+        node->svojstva->tip = "funkcija(";
+        for(int i = 0; i < node->djeca[2]->svojstva->argumenti.size(); i++){
+            node->svojstva->tip += node->djeca[2]->svojstva->argumenti[i];
+            if(i != node->djeca[2]->svojstva->argumenti.size() - 1){
+                node->svojstva->tip += ", ";
+            }
+        }
+        node->svojstva->tip += ") -> " + node->svojstva->ntip;
+        node->svojstva->leks_jedinka = node->djeca[0]->svojstva->leks_jedinka;
+        node->svojstva->argumenti = node->djeca[2]->svojstva->argumenti;
+
+        tablica_node->zapis.insert({node->svojstva->leks_jedinka, node});
+    }
+    
     else{
         greska();
     }
