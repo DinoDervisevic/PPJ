@@ -1479,7 +1479,33 @@ Node* parsiraj() {
     return root;
 }
 
+void provjera_main_funkcije(Tablica_Node* tablica_node){
+    Tablica_Node* trenutna_tablica = tablica_node;
+    while(trenutna_tablica != nullptr){
+        if(trenutna_tablica->zapis.find("main") != trenutna_tablica->zapis.end()){
+            Node* main_funkcija = trenutna_tablica->zapis["main"];
+            if(main_funkcija->svojstva->tip == "funkcija() -> int" 
+            && main_funkcija->svojstva->argumenti.size() == 0){
+                return;
+            }
+        }
+        trenutna_tablica = trenutna_tablica->roditelj;
+    }
+    cout << "main" << endl;
+}
 
+void provjeri_definirane_funkcije(Tablica_Node* tablica_node) {
+    for (const auto& par : tablica_node->zapis) {
+        Node* node = par.second;
+        if (node->svojstva->tip.find("funkcija(") == 0 && node->djeca.empty()) {
+            cout << node->svojstva->leks_jedinka << endl;
+            exit(0);
+        }
+    }
+    if (tablica_node->roditelj != nullptr) {
+        provjeri_definirane_funkcije(tablica_node->roditelj);
+    }
+}
 
 int main(void){
 
