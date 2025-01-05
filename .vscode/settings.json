@@ -3,6 +3,7 @@
         "*.embeddedhtml": "html",
         ".fantomasignore": "ignore",
         "*.tcc": "cpp",
-        "initializer_list": "cpp"
+        "initializer_list": "cpp",
+        "iostream": "cpp"
     }
 }

@@ -67,8 +67,9 @@ vector<string> split(const string& str, const string& delimiter) {
     return dijelovi;
 }
 
-void greska(){ //napraviti funkciju za ispis greske
-    cout << "0" << endl;
+
+void greska(Node* node){ //napraviti funkciju za ispis greske
+    cout << node->svojstva->znak << " " << node->svojstva->leks_jedinka << endl;
 }
 
 Node* provjeri_tablicu(string leks_jedinka, Tablica_Node* tablica_node){ //provjerava postoji li leks_jedinka u tablici ili njenim roditeljima
@@ -231,11 +232,11 @@ void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node);
 
 
 void primarni_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
     if(node->djeca.size() == 1){
         if(node->djeca[0]->svojstva->znak == "IDN"){ //ako je dijete IDN
             if(provjeri_tablicu(node->djeca[0]->svojstva->leks_jedinka, tablica_node) == nullptr){ //ako ne postoji u tablici
-                greska();
+                greska(node);
             }
             else{ //ako postoji u tablici, postavi svojstva
                 naslijedi_svojstva(node, tablica_node->zapis[node->djeca[0]->svojstva->leks_jedinka]);
@@ -244,7 +245,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
         else if(node->djeca[0]->svojstva->znak == "BROJ"){ //ako je dijete BROJ
             long long broj = stoll(node->svojstva->leks_jedinka);
             if(!(broj <= INT_MAX && broj >= INT_MIN)){
-                greska();
+                greska(node);
             }
             else{ //ako je u intervalu int, postavi svojstva
                 node->svojstva->tip = "int";
@@ -257,7 +258,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                 node->svojstva->tip = "char";
                 node->svojstva->l_izraz = false;
             } else {
-                greska();
+                greska(node);
             }
         }
         else if(node->djeca[0]->svojstva->znak == "NIZ_ZNAKOVA"){ //ako je dijete NIZ_ZNAKOVA
@@ -266,11 +267,11 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                 node->svojstva->tip = "niz(const(char))";
                 node->svojstva->l_izraz = false;
             } else {
-                greska();
+                greska(node);
             }
         }
         else{
-            greska();
+            greska(node);
         }
     }
 
@@ -282,13 +283,13 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
         node->svojstva->l_izraz = node->djeca[1]->svojstva->l_izraz;
     }
     else{
-        greska();
+        greska(node);
         
     }
 }
 
 void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     //ako je dijete <primarni_izraz>
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<primarni_izraz>"){
@@ -302,7 +303,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
     && node->djeca[3]->svojstva->znak == "D_UGL_ZAGRADA"){
         postfiks_izraz(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->tip.substr(0, 3) != "niz"){
-            greska();
+            greska(node);
         }
         else{ //ako se radi o nizu
             string podtip = node->djeca[0]->svojstva->tip.substr(4, node->djeca[0]->svojstva->tip.size()-5);
@@ -318,7 +319,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
 
         izraz(node->djeca[2], tablica_node);
         if (!moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")) {
-            greska();
+            greska(node);
         }
     }
 
@@ -326,11 +327,11 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "D_ZAGRADA"){
         postfiks_izraz(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->tip.substr(0, 8) != "funkcija"){
-            greska();
+            greska(node);
         }
         else{
             if(!node->djeca[0]->svojstva->argumenti.empty()){
-                greska();
+                greska(node);
             }
             else{
                 string povratni_tip = split(node->djeca[0]->svojstva->tip, " -> ")[1];
@@ -345,19 +346,19 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
     && node->djeca[3]->svojstva->znak == "D_ZAGRADA"){
         postfiks_izraz(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->tip.substr(0, 8) != "funkcija"){
-            greska();
+            greska(node);
         }
         else{
             if(node->djeca[0]->svojstva->argumenti.empty()){
-                greska();
+                greska(node);
             }
             else{
                 if(node->djeca[0]->svojstva->argumenti.size() != node->djeca[2]->djeca.size()){
-                    greska();
+                    greska(node);
                 }
                 for(int i = 0; i < node->djeca[0]->svojstva->argumenti.size(); i++){
                     if(!moze_se_pretvoriti(node->djeca[2]->djeca[i]->svojstva->tip, node->djeca[0]->svojstva->argumenti[i])){
-                        greska();
+                        greska(node);
                     }
                 }
                 string povratni_tip = split(node->djeca[0]->svojstva->tip, " -> ")[1];
@@ -371,19 +372,19 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
     && (node->djeca[1]->svojstva->znak == "OP_INC" || node->djeca[1]->svojstva->znak == "OP_DEC")){
         postfiks_izraz(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->l_izraz == false || !moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         node->svojstva->tip = "int";
         node->svojstva->l_izraz = false;
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void lista_argumenata(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izraz_pridruzivanja>"){
         izraz_pridruzivanja(node->djeca[0], tablica_node);
         node->svojstva->argumenti.push_back(node->djeca[0]->svojstva->tip);
@@ -396,12 +397,12 @@ void lista_argumenata(Node* node, Tablica_Node* tablica_node){
         node->svojstva->argumenti.push_back(node->djeca[2]->svojstva->tip);
     }
     else{
-        greska();
+        greska(node);
     }
 }
 
 void unarni_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<postfiks_izraz>"){
         postfiks_izraz(node->djeca[0], tablica_node);
@@ -413,7 +414,7 @@ void unarni_izraz(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "<unarni_izraz>"){
         unarni_izraz(node->djeca[1], tablica_node);
         if(node->djeca[1]->svojstva->l_izraz == false || !moze_se_pretvoriti(node->djeca[1]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         node->svojstva->tip = "int";
         node->svojstva->l_izraz = false;
@@ -427,13 +428,13 @@ void unarni_izraz(Node* node, Tablica_Node* tablica_node){
             node->svojstva->l_izraz = false;
         }
         else{
-            greska();
+            greska(node);
         }
     }
 }
 
 void unarni_operator(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && (node->djeca[0]->svojstva->znak == "PLUS" || node->djeca[0]->svojstva->znak == "MINUS"
     || node->djeca[0]->svojstva->znak == "OP_TILDA" || node->djeca[0]->svojstva->znak == "OP_NEG")){
@@ -442,12 +443,12 @@ void unarni_operator(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void cast_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<unarni_izraz>"){
         unarni_izraz(node->djeca[0], tablica_node);
@@ -465,17 +466,17 @@ void cast_izraz(Node* node, Tablica_Node* tablica_node){
             node->svojstva->l_izraz = false;
         }
         else{
-            greska();
+            greska(node);
         }
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void ime_tipa(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<specifikator_tipa>"){
         specifikator_tipa(node->djeca[0], tablica_node);
@@ -486,19 +487,19 @@ void ime_tipa(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "<specifikator_tipa>"){
         specifikator_tipa(node->djeca[1], tablica_node);
         if(node->djeca[1]->svojstva->tip == "void"){
-            greska();
+            greska(node);
         }
         node->svojstva->tip = "const(" + node->djeca[1]->svojstva->tip + ")";
         node->svojstva->konst = true;
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void specifikator_tipa(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "KR_VOID"){
         node->svojstva->tip = "void";
@@ -513,12 +514,12 @@ void specifikator_tipa(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void multiplikativni_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<cast_izraz>"){
         cast_izraz(node->djeca[0], tablica_node);
@@ -532,7 +533,7 @@ void multiplikativni_izraz(Node* node, Tablica_Node* tablica_node){
         multiplikativni_izraz(node->djeca[0], tablica_node);
         cast_izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         else{
             node->svojstva->tip = "int";
@@ -541,12 +542,12 @@ void multiplikativni_izraz(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<multiplikativni_izraz>"){
         multiplikativni_izraz(node->djeca[0], tablica_node);
@@ -560,7 +561,7 @@ void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
         aditivni_izraz(node->djeca[0], tablica_node);
         multiplikativni_izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         else{
             node->svojstva->tip = "int";
@@ -569,12 +570,12 @@ void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void odnosni_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<aditivni_izraz>"){
         aditivni_izraz(node->djeca[0], tablica_node);
@@ -589,7 +590,7 @@ void odnosni_izraz(Node* node, Tablica_Node* tablica_node){
         odnosni_izraz(node->djeca[0], tablica_node);
         aditivni_izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         else{
             node->svojstva->tip = "int";
@@ -598,12 +599,12 @@ void odnosni_izraz(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void jednakosni_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<odnosni_izraz>"){
         odnosni_izraz(node->djeca[0], tablica_node);
@@ -617,7 +618,7 @@ void jednakosni_izraz(Node* node, Tablica_Node* tablica_node){
         jednakosni_izraz(node->djeca[0], tablica_node);
         odnosni_izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         else{
             node->svojstva->tip = "int";
@@ -626,12 +627,12 @@ void jednakosni_izraz(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void bin_i_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<jednakosni_izraz>"){
         jednakosni_izraz(node->djeca[0], tablica_node);
@@ -644,7 +645,7 @@ void bin_i_izraz(Node* node, Tablica_Node* tablica_node){
         bin_i_izraz(node->djeca[0], tablica_node);
         jednakosni_izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         else{
             node->svojstva->tip = "int";
@@ -653,12 +654,12 @@ void bin_i_izraz(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void bin_xili_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<bin_i_izraz>"){
         bin_i_izraz(node->djeca[0], tablica_node);
@@ -671,7 +672,7 @@ void bin_xili_izraz(Node* node, Tablica_Node* tablica_node){
         bin_xili_izraz(node->djeca[0], tablica_node);
         bin_i_izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         else{
             node->svojstva->tip = "int";
@@ -680,12 +681,12 @@ void bin_xili_izraz(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void bin_ili_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<bin_xili_izraz>"){
         bin_xili_izraz(node->djeca[0], tablica_node);
@@ -698,7 +699,7 @@ void bin_ili_izraz(Node* node, Tablica_Node* tablica_node){
         bin_ili_izraz(node->djeca[0], tablica_node);
         bin_xili_izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         else{
             node->svojstva->tip = "int";
@@ -707,12 +708,12 @@ void bin_ili_izraz(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void log_i_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<bin_ili_izraz>"){
         bin_ili_izraz(node->djeca[0], tablica_node);
@@ -725,7 +726,7 @@ void log_i_izraz(Node* node, Tablica_Node* tablica_node){
         log_i_izraz(node->djeca[0], tablica_node);
         bin_ili_izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         else{
             node->svojstva->tip = "int";
@@ -734,12 +735,12 @@ void log_i_izraz(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void log_ili_izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<log_i_izraz>"){
         log_i_izraz(node->djeca[0], tablica_node);
@@ -752,7 +753,7 @@ void log_ili_izraz(Node* node, Tablica_Node* tablica_node){
         log_ili_izraz(node->djeca[0], tablica_node);
         log_i_izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         else{
             node->svojstva->tip = "int";
@@ -761,12 +762,12 @@ void log_ili_izraz(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<log_ili_izraz>"){
         log_ili_izraz(node->djeca[0], tablica_node);
@@ -779,7 +780,7 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
         postfiks_izraz(node->djeca[0], tablica_node);
         izraz_pridruzivanja(node->djeca[2], tablica_node);
         if(node->djeca[0]->svojstva->l_izraz == false || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, node->djeca[0]->svojstva->tip)){
-            greska();
+            greska(node);
         }
         else{
             node->svojstva->tip = node->djeca[0]->svojstva->tip;
@@ -788,12 +789,12 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void izraz(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izraz_pridruzivanja>"){
         izraz_pridruzivanja(node->djeca[0], tablica_node);
@@ -810,12 +811,12 @@ void izraz(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void slozena_naredba(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     Tablica_Node* nova_tablica = new Tablica_Node(tablica_node);
 
@@ -832,12 +833,12 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void lista_naredbi(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<naredba>"){
         naredba(node->djeca[0], tablica_node);
@@ -850,12 +851,12 @@ void lista_naredbi(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void naredba(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<slozena_naredba>"){
         slozena_naredba(node->djeca[0], tablica_node);
@@ -878,12 +879,12 @@ void naredba(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void izraz_naredba(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 2 && node->djeca[0]->svojstva->znak == "<izraz>" 
     && node->djeca[1]->svojstva->znak == "TOCKAZAREZ"){
@@ -896,19 +897,19 @@ void izraz_naredba(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void naredba_grananja(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 5 && node->djeca[0]->svojstva->znak == "KR_IF" 
     && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<izraz>"
     && node->djeca[3]->svojstva->znak == "D_ZAGRADA" && node->djeca[4]->svojstva->znak == "<naredba>"){
         izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         naredba(node->djeca[4], tablica_node);
     }
@@ -919,26 +920,26 @@ void naredba_grananja(Node* node, Tablica_Node* tablica_node){
     && node->djeca[5]->svojstva->znak == "KR_ELSE" && node->djeca[6]->svojstva->znak == "<naredba>"){
         izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         naredba(node->djeca[4], tablica_node);
         naredba(node->djeca[6], tablica_node);
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void naredba_petlje(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 5 && node->djeca[0]->svojstva->znak == "KR_WHILE" 
     && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<izraz>"
     && node->djeca[3]->svojstva->znak == "D_ZAGRADA" && node->djeca[4]->svojstva->znak == "<naredba>"){
         izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         naredba(node->djeca[4], tablica_node);
     }
@@ -950,7 +951,7 @@ void naredba_petlje(Node* node, Tablica_Node* tablica_node){
         izraz_naredba(node->djeca[2], tablica_node);
         izraz_naredba(node->djeca[3], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[3]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         naredba(node->djeca[5], tablica_node);
     }
@@ -962,25 +963,25 @@ void naredba_petlje(Node* node, Tablica_Node* tablica_node){
         izraz_naredba(node->djeca[2], tablica_node);
         izraz_naredba(node->djeca[3], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[3]->svojstva->tip, "int")){
-            greska();
+            greska(node);
         }
         izraz(node->djeca[4], tablica_node);
         naredba(node->djeca[6], tablica_node);
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void naredba_skoka(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 2 && (node->djeca[0]->svojstva->znak == "KR_CONTINUE" 
     || node->djeca[0]->svojstva->znak == "KR_BREAK")
     && node->djeca[1]->svojstva->znak == "TOCKAZAREZ"){
         if(!jel_u_petlji(node)){
-            greska();
+            greska(node);
         }
         node->svojstva->tip = "int";
     }
@@ -989,7 +990,7 @@ void naredba_skoka(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "TOCKAZAREZ"){
         string tip = jel_u_funkciji(node);
         if(tip != "void"){
-            greska();
+            greska(node);
         }
         node->svojstva->tip = "int";
     }
@@ -998,19 +999,19 @@ void naredba_skoka(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "<izraz>" && node->djeca[2]->svojstva->znak == "TOCKAZAREZ"){
         string tip = jel_u_funkciji(node);
         if(tip == "void"){
-            greska();
+            greska(node);
         }
         izraz(node->djeca[1], tablica_node);
         node->svojstva->tip = tip;
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void prijevodna_jedinica(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     Tablica_Node* nova_tablica = new Tablica_Node(tablica_node);
 
@@ -1025,12 +1026,12 @@ void prijevodna_jedinica(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void vanjska_deklaracija(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<definicija_funkcije>"){
         definicija_funkcije(node->djeca[0], tablica_node);
@@ -1041,12 +1042,12 @@ void vanjska_deklaracija(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 6 && node->djeca[0]->svojstva->znak == "<ime_tipa>" 
     && node->djeca[1]->svojstva->znak == "IDN" && node->djeca[2]->svojstva->znak == "L_ZAGRADA"
@@ -1054,17 +1055,17 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
     && node->djeca[5]->svojstva->znak == "<slozena_naredba>"){
         ime_tipa(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->konst){
-            greska();
+            greska(node);
         }
 
         Node* prijasnja_definicija = provjeri_tablicu(node->djeca[1]->svojstva->leks_jedinka, tablica_node);
         if(prijasnja_definicija != nullptr){
             if(prijasnja_definicija->svojstva->argumenti.size() != 0){
-                greska();
+                greska(node);
             }
             if(prijasnja_definicija->svojstva->tip.find(" -> ") != string::npos 
             || split(prijasnja_definicija->svojstva->tip, " -> ")[1] != node->djeca[0]->svojstva->tip){
-                greska();
+                greska(node);
             }
         }
 
@@ -1081,23 +1082,23 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
     && node->djeca[5]->svojstva->znak == "<slozena_naredba>"){
         ime_tipa(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->konst){
-            greska();
+            greska(node);
         }
 
         lista_parametara(node->djeca[3], tablica_node);
         Node* prijasnja_definicija = provjeri_tablicu(node->djeca[1]->svojstva->leks_jedinka, tablica_node);
         if(prijasnja_definicija != nullptr){
             if(prijasnja_definicija->svojstva->argumenti.size() != node->djeca[3]->svojstva->argumenti.size()){
-                greska();
+                greska(node);
             }
             for(int i = 0; i < node->djeca[3]->svojstva->argumenti.size(); i++){
                 if(prijasnja_definicija->svojstva->argumenti[i] != node->djeca[3]->svojstva->argumenti[i]){
-                    greska();
+                    greska(node);
                 }
             }
             if(prijasnja_definicija->svojstva->tip.find(" -> ") != string::npos 
             || split(prijasnja_definicija->svojstva->tip, " -> ")[1] != node->djeca[0]->svojstva->tip){
-                greska();
+                greska(node);
             }
         }
 
@@ -1116,12 +1117,12 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
         slozena_naredba(node->djeca[5], tablica_node);
     }
     else{
-        greska();
+        greska(node);
     }
 }
 
 void lista_parametara(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<deklaracija_parametra>"){
         deklaracija_parametra(node->djeca[0], tablica_node);
@@ -1135,7 +1136,7 @@ void lista_parametara(Node* node, Tablica_Node* tablica_node){
         deklaracija_parametra(node->djeca[2], tablica_node);
         for(int i = 0; i < node->djeca[0]->svojstva->argumenti_imena.size(); i++){
             if(node->djeca[0]->svojstva->argumenti_imena[i] == node->djeca[2]->svojstva->leks_jedinka){
-                greska();
+                greska(node);
             }
         }
         node->svojstva->argumenti = node->djeca[0]->svojstva->argumenti;
@@ -1145,18 +1146,18 @@ void lista_parametara(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void deklaracija_parametra(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 2 && node->djeca[0]->svojstva->znak == "<ime_tipa>" 
     && node->djeca[1]->svojstva->znak == "IDN"){
         ime_tipa(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->tip == "void"){
-            greska();
+            greska(node);
         }
         node->svojstva->tip = node->djeca[0]->svojstva->tip;
         node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
@@ -1167,19 +1168,19 @@ void deklaracija_parametra(Node* node, Tablica_Node* tablica_node){
     && node->djeca[3]->svojstva->znak == "D_UGL_ZAGRADA"){
         ime_tipa(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->tip == "void"){
-            greska();
+            greska(node);
         }
         node->svojstva->tip = "niz(" + node->djeca[0]->svojstva->tip + ")";
         node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void lista_deklaracija(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<deklaracija>"){
         deklaracija(node->djeca[0], tablica_node);
@@ -1192,12 +1193,12 @@ void lista_deklaracija(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void deklaracija(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<ime_tipa>" 
     && node->djeca[1]->svojstva->znak == "<lista_init_deklaratora>" && node->djeca[2]->svojstva->znak == "TOCKAZAREZ"){
@@ -1207,12 +1208,12 @@ void deklaracija(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void lista_init_deklaratora(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<init_deklarator>"){
         node->djeca[0]->svojstva->ntip = node->svojstva->ntip;
@@ -1228,19 +1229,19 @@ void lista_init_deklaratora(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void init_deklarator(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izravni_deklarator>"){
         node->djeca[0]->svojstva->ntip = node->svojstva->ntip;
         izravni_deklarator(node->djeca[0], tablica_node);
 
         if(node->djeca[0]->svojstva->konst){
-            greska();
+            greska(node);
         }
     }
 
@@ -1256,41 +1257,41 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
         || (tip_deklrator.substr(0, 6) == "const(" && tip_deklrator.substr(6, tip_deklrator.size() - 7) == tip_inicijalizator))) {
 
             if (!moze_se_pretvoriti(tip_inicijalizator, tip_deklrator)) {
-                greska();
+                greska(node);
             }
         } else if (tip_deklrator.substr(0, 4) == "niz(") {
 
             string element_tip = tip_deklrator.substr(4, tip_deklrator.size() - 5);
             if (node->djeca[2]->svojstva->broj_elemenata > node->djeca[0]->svojstva->broj_elemenata) {
-                greska();
+                greska(node);
             }
             for (const string& u : node->djeca[2]->svojstva->tipovi) {
                 if (!moze_se_pretvoriti(u, element_tip)) {
-                    greska();
+                    greska(node);
                 }
             }
         } else {
-            greska();
+            greska(node);
         }
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "IDN"){
         node->svojstva->tip = node->svojstva->ntip;
         node->svojstva->leks_jedinka = node->djeca[0]->svojstva->leks_jedinka;
 
         if(node->svojstva->tip == "void"){
-            greska();
+            greska(node);
         }
         if(provjeri_tablicu_lokalno(node->djeca[0]->svojstva->leks_jedinka, tablica_node) != nullptr){
-            greska();
+            greska(node);
         }
 
         tablica_node->zapis.insert({node->djeca[0]->svojstva->leks_jedinka, node});
@@ -1301,13 +1302,13 @@ void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
     && node->djeca[3]->svojstva->znak == "D_UGL_ZAGRADA"){
         if(node->djeca[2]->svojstva->tip != "int" || stoi(node->djeca[2]->svojstva->leks_jedinka) <= 0
         || stoi(node->djeca[2]->svojstva->leks_jedinka) > 1024){
-            greska();
+            greska(node);
         }
         if(provjeri_tablicu_lokalno(node->djeca[0]->svojstva->leks_jedinka, tablica_node) != nullptr){
-            greska();
+            greska(node);
         }
         if(node->svojstva->ntip == "void"){
-            greska();
+            greska(node);
         }
 
         node->svojstva->tip = "niz(" + node->svojstva->ntip + ")";
@@ -1323,12 +1324,12 @@ void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
         Node* prijasnja_definicija = provjeri_tablicu(node->djeca[0]->svojstva->leks_jedinka, tablica_node);
         if(prijasnja_definicija != nullptr){
             if(prijasnja_definicija->svojstva->argumenti.size() != 0){
-                greska();
+                greska(node);
             }
             if(prijasnja_definicija->svojstva->tip.find(" -> ") == string::npos
             || split(prijasnja_definicija->svojstva->tip, " -> ")[1] != node->svojstva->ntip
             || prijasnja_definicija->svojstva->tip.find("funkcija(") == string::npos){
-                greska();
+                greska(node);
             }
         }
 
@@ -1345,17 +1346,17 @@ void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
         Node* prijasnja_definicija = provjeri_tablicu(node->djeca[0]->svojstva->leks_jedinka, tablica_node);
         if(prijasnja_definicija != nullptr){
             if(prijasnja_definicija->svojstva->argumenti.size() != node->djeca[2]->svojstva->argumenti.size()){
-                greska();
+                greska(node);
             }
             for(int i = 0; i < node->djeca[2]->svojstva->argumenti.size(); i++){
                 if(prijasnja_definicija->svojstva->argumenti[i] != node->djeca[2]->svojstva->argumenti[i]){
-                    greska();
+                    greska(node);
                 }
             }
             if(prijasnja_definicija->svojstva->tip.find(" -> ") == string::npos
             || split(prijasnja_definicija->svojstva->tip, " -> ")[1] != node->svojstva->ntip
             || prijasnja_definicija->svojstva->tip.find("funkcija(") == string::npos){
-                greska();
+                greska(node);
             }
         }
 
@@ -1374,12 +1375,12 @@ void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
     }
     
     else{
-        greska();
+        greska(node);
     }
 }
 
 void inicijalizator(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izraz_pridruzivanja>"){
         izraz_pridruzivanja(node->djeca[0], tablica_node);
@@ -1412,12 +1413,12 @@ void inicijalizator(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 
 void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
-    if(node->svojstva == nullptr) greska();
+    if(node->svojstva == nullptr) greska(node);
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izraz_pridruzivanja>"){
         izraz_pridruzivanja(node->djeca[0], tablica_node);
@@ -1435,14 +1436,64 @@ void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
     }
 
     else{
-        greska();
+        greska(node);
     }
 }
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
 
-int main(void){
-    
+Node* parsiraj() {
+    string line;
+    vector<Node*> trenutni_roditelji = {};
+    Node* root = nullptr;
 
+    while (getline(cin, line)) {
+        int level = 0;
+        while (line[level] == ' ') {
+            if(line.size() == level) greska(root);
+            level++;
+        }
+
+        line = line.substr(level);
+
+        Node* node = new Node();
+        if(line[0] == '<'){
+            node->svojstva->znak = line;
+        }
+        else{
+            vector<string> dijelovi = split(line, " ");
+            node->svojstva->znak = dijelovi[0];
+            node->svojstva->redak = stoi(dijelovi[1]);	
+            node->svojstva->leks_jedinka = dijelovi[2];
+        }
+
+
+        trenutni_roditelji[level-1]->djeca.push_back(node);
+        if(trenutni_roditelji.size() < level){
+            trenutni_roditelji.push_back(node);
+        }
+        else{
+            trenutni_roditelji[level] = node;
+        }      
+    }
+    return root;
+}
+
+
+
+int main(void){
+
+    Node* root = nullptr;
+    Tablica_Node* tablica_node = new Tablica_Node(nullptr);
+
+    try{
+        root = parsiraj();
+        prijevodna_jedinica(root, tablica_node);
+    }
+    catch(...){
+        cout << "0" << endl;
+        return 0;
+    }
+    
     return 0;
 }
