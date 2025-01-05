@@ -165,6 +165,26 @@ void naslijedi_svojstva(Node* dijete, Node* roditelj){
     dijete->svojstva->argumenti = roditelj->svojstva->argumenti;
 }	
 
+int jel_ide_u_niz_znakova(Node* node){
+    int ide = 0;
+    if(node->svojstva->znak == "NIZ_ZNAKOVA"){
+        int broj = -1;
+        for(char znak : node->svojstva->leks_jedinka){
+            if(znak != '\\'){
+                broj++;
+            }
+        }
+        return broj;
+    }
+    if(node->djeca.empty()){
+        return 0;
+    }
+    for(Node* dijete : node->djeca){
+        ide = ide + jel_ide_u_niz_znakova(dijete);
+    }
+    return ide;
+}
+
 
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
@@ -1342,7 +1362,7 @@ void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
         node->svojstva->tip = "funkcija(";
         for(int i = 0; i < node->djeca[2]->svojstva->argumenti.size(); i++){
             node->svojstva->tip += node->djeca[2]->svojstva->argumenti[i];
-            if(i != node->djeca[2]->svojstva->argumenti.size() - 1){
+            if(i < node->djeca[2]->svojstva->argumenti.size() - 1){
                 node->svojstva->tip += ", ";
             }
         }
@@ -1353,6 +1373,67 @@ void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
         tablica_node->zapis.insert({node->svojstva->leks_jedinka, node});
     }
     
+    else{
+        greska();
+    }
+}
+
+void inicijalizator(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izraz_pridruzivanja>"){
+        izraz_pridruzivanja(node->djeca[0], tablica_node);
+        int broj = jel_ide_u_niz_znakova(node);
+        if(broj != 0){
+            node->svojstva->tip = "NIZ_ZNAKOVA";
+            node->svojstva->broj_elemenata = broj;
+            for(int i = 0; i < broj; i++){
+                node->svojstva->tipovi.push_back("char");
+            }
+        }
+        else{
+            node->svojstva->tip = node->djeca[0]->svojstva->tip;
+        }
+    }
+
+    else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
+    && node->djeca[1]->svojstva->znak == "<lista_izraza_pridruzivanja>" && node->djeca[2]->svojstva->znak == "D_VIT_ZAGRADA"){
+        lista_izraza_pridruzivanja(node->djeca[1], tablica_node);
+        node->svojstva->tip = "niz(";
+        for(int i = 0; i < node->djeca[1]->svojstva->tipovi.size(); i++){
+            node->svojstva->tip += node->djeca[1]->svojstva->tipovi[i];
+            if(i != node->djeca[1]->svojstva->tipovi.size() - 1){
+                node->svojstva->tip += ", ";
+            }
+        }
+        node->svojstva->tip += ")";
+        node->svojstva->tipovi = node->djeca[1]->svojstva->tipovi;
+        node->svojstva->broj_elemenata = node->djeca[1]->svojstva->broj_elemenata;
+    }
+
+    else{
+        greska();
+    }
+}
+
+void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
+    if(node->svojstva == nullptr) greska();
+
+    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izraz_pridruzivanja>"){
+        izraz_pridruzivanja(node->djeca[0], tablica_node);
+        node->svojstva->tipovi.push_back(node->djeca[0]->svojstva->tip);
+        node->svojstva->broj_elemenata = 1;
+    }
+
+    else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<lista_izraza_pridruzivanja>" 
+    && node->djeca[1]->svojstva->znak == "ZAREZ" && node->djeca[2]->svojstva->znak == "<izraz_pridruzivanja>"){
+        lista_izraza_pridruzivanja(node->djeca[0], tablica_node);
+        izraz_pridruzivanja(node->djeca[2], tablica_node);
+        node->svojstva->tipovi = node->djeca[0]->svojstva->tipovi;
+        node->svojstva->tipovi.push_back(node->djeca[2]->svojstva->tip);
+        node->svojstva->broj_elemenata = node->djeca[0]->svojstva->broj_elemenata + 1;
+    }
+
     else{
         greska();
     }
