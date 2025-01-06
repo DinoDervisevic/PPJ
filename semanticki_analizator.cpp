@@ -25,6 +25,7 @@ class Node_svojstva{
         vector<string> argumenti_imena = {}; //isto za funkcije
         int broj_elemenata = 0; //samo za deklaracije nizova
         vector<string> tipovi = {}; //samo za inicijalizaciju nizova (tj <inicijalizator>)
+        bool fja_definirana = false; //gledamo ima li funckija definiciju ili samo deklaraciju
 
         Node_svojstva(string znak, int redak, string leks_jedinka) : znak(znak), redak(redak), leks_jedinka(leks_jedinka), konst(false) {}
 
@@ -42,7 +43,9 @@ class Node{
 
         Node(Node_svojstva* svojstva) : svojstva(svojstva){};
 
-        Node() = default;
+        Node(){
+            svojstva = new Node_svojstva();
+        };
 
 };
 
@@ -50,6 +53,7 @@ class Tablica_Node{
     public:
         map<string, Node*> zapis;
         Tablica_Node* roditelj = nullptr;
+        vector<Tablica_Node*> djeca = {};
 
         Tablica_Node(Tablica_Node* roditelj = nullptr) : roditelj(roditelj) {}
 };
@@ -819,6 +823,7 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     if(node->svojstva == nullptr) greska(node);
 
     Tablica_Node* nova_tablica = new Tablica_Node(tablica_node);
+    tablica_node->djeca.push_back(nova_tablica);
 
     if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
     && node->djeca[1]->svojstva->znak == "<lista_naredbi>" && node->djeca[2]->svojstva->znak == "D_VIT_ZAGRADA"){
@@ -1013,16 +1018,14 @@ void naredba_skoka(Node* node, Tablica_Node* tablica_node){
 void prijevodna_jedinica(Node* node, Tablica_Node* tablica_node){
     if(node->svojstva == nullptr) greska(node);
 
-    Tablica_Node* nova_tablica = new Tablica_Node(tablica_node);
-
     if(node->djeca.size() == 2 && node->djeca[0]->svojstva->znak == "<prijevodna_jedinica>" 
     && node->djeca[1]->svojstva->znak == "<vanjska_deklaracija>"){
-        prijevodna_jedinica(node->djeca[0], nova_tablica);
-        vanjska_deklaracija(node->djeca[1], nova_tablica);
+        prijevodna_jedinica(node->djeca[0], tablica_node);
+        vanjska_deklaracija(node->djeca[1], tablica_node);
     }
 
     else if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<vanjska_deklaracija>"){
-        vanjska_deklaracija(node->djeca[0], nova_tablica);
+        vanjska_deklaracija(node->djeca[0], tablica_node);
     }
 
     else{
@@ -1074,6 +1077,7 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
         node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
         tablica_node->zapis.insert({node->djeca[1]->svojstva->leks_jedinka, node});
         slozena_naredba(node->djeca[5], tablica_node);
+        node->svojstva->fja_definirana = true;
     }
 
     else if(node->djeca.size() == 6 && node->djeca[0]->svojstva->znak == "<ime_tipa>"
@@ -1115,6 +1119,7 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
         node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
         tablica_node->zapis.insert({node->djeca[1]->svojstva->leks_jedinka, node});
         slozena_naredba(node->djeca[5], tablica_node);
+        node->svojstva->fja_definirana = true;
     }
     else{
         greska(node);
@@ -1457,6 +1462,9 @@ Node* parsiraj() {
         line = line.substr(level);
 
         Node* node = new Node();
+        if(root == nullptr){
+            root = node;
+        }
         if(line[0] == '<'){
             node->svojstva->znak = line;
         }
@@ -1468,13 +1476,16 @@ Node* parsiraj() {
         }
 
 
-        trenutni_roditelji[level-1]->djeca.push_back(node);
-        if(trenutni_roditelji.size() < level){
+        if(level > 0)trenutni_roditelji[level-1]->djeca.push_back(node);
+        if(trenutni_roditelji.size() == level){
             trenutni_roditelji.push_back(node);
         }
-        else{
+        else if(trenutni_roditelji.size() > level){
             trenutni_roditelji[level] = node;
         }      
+        else{
+            greska(root);
+        }
     }
     return root;
 }
@@ -1494,16 +1505,23 @@ void provjera_main_funkcije(Tablica_Node* tablica_node){
     cout << "main" << endl;
 }
 
-void provjeri_definirane_funkcije(Tablica_Node* tablica_node) {
+void provjeri_definirane_funkcije(Tablica_Node* tablica_node, 
+vector<string>* imena_definiranih_fja, vector<string>* imena_deklariranih_fja) { //TODO
     for (const auto& par : tablica_node->zapis) {
         Node* node = par.second;
-        if (node->svojstva->tip.find("funkcija(") == 0 && node->djeca.empty()) {
-            cout << node->svojstva->leks_jedinka << endl;
-            exit(0);
+        if (node->svojstva->tip.find("funkcija(") != string::npos) {
+            if(node->svojstva->fja_definirana){
+                imena_definiranih_fja->push_back(node->svojstva->leks_jedinka);
+            }
+            else{
+                imena_deklariranih_fja->push_back(node->svojstva->leks_jedinka);
+            }
         }
     }
-    if (tablica_node->roditelj != nullptr) {
-        provjeri_definirane_funkcije(tablica_node->roditelj);
+    if (!tablica_node->djeca.empty()) {
+        for(auto& dijete : tablica_node->djeca){
+            provjeri_definirane_funkcije(dijete, imena_definiranih_fja, imena_deklariranih_fja);
+        }
     }
 }
 
@@ -1519,6 +1537,19 @@ int main(void){
     catch(...){
         cout << "0" << endl;
         return 0;
+    }
+
+    vector<string> imena_definiranih_fja = {};
+    vector<string> imena_deklariranih_fja = {};
+
+    provjera_main_funkcije(tablica_node);
+    provjeri_definirane_funkcije(tablica_node, &imena_definiranih_fja, &imena_deklariranih_fja);
+
+    for(const string& ime : imena_deklariranih_fja){
+        if(find(imena_definiranih_fja.begin(), imena_definiranih_fja.end(), ime) == imena_definiranih_fja.end()){
+            cout << "funkcija" << endl;
+            return 0;
+        }
     }
     
     return 0;
