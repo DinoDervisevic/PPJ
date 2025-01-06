@@ -73,10 +73,11 @@ vector<string> split(const string& str, const string& delimiter) {
 
 
 void greska(Node* node){ //napraviti funkciju za ispis greske
-    cout << node->svojstva->znak << " " << node->svojstva->leks_jedinka << endl;
+    cout << node->svojstva->znak << " " << node->svojstva->redak << " " << node->svojstva->leks_jedinka << endl;
     for(Node* dijete : node->djeca){
-        cout << dijete->svojstva->znak << " " << dijete->svojstva->leks_jedinka << endl;
+        cout << dijete->svojstva->znak << " " << dijete->svojstva->redak << " " << dijete->svojstva->leks_jedinka << endl;
     }
+    exit(0);
 }
 
 Node* provjeri_tablicu(string leks_jedinka, Tablica_Node* tablica_node){ //provjerava postoji li leks_jedinka u tablici ili njenim roditeljima
@@ -242,11 +243,15 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
     if(node->svojstva == nullptr) greska(node);
     if(node->djeca.size() == 1){
         if(node->djeca[0]->svojstva->znak == "IDN"){ //ako je dijete IDN
-            if(provjeri_tablicu(node->djeca[0]->svojstva->leks_jedinka, tablica_node) == nullptr){ //ako ne postoji u tablici
+        Node* pronadeno = provjeri_tablicu(node->djeca[0]->svojstva->leks_jedinka, tablica_node);
+            if(pronadeno == nullptr){ //ako ne postoji u tablici
                 greska(node);
             }
             else{ //ako postoji u tablici, postavi svojstva
-                naslijedi_svojstva(node, tablica_node->zapis[node->djeca[0]->svojstva->leks_jedinka]);
+                node->svojstva->tip = pronadeno->svojstva->tip;
+                node->svojstva->l_izraz = pronadeno->svojstva->l_izraz;
+                node->svojstva->konst = pronadeno->svojstva->konst;
+                node->svojstva->argumenti = pronadeno->svojstva->argumenti;
             }
         }
         else if(node->djeca[0]->svojstva->znak == "BROJ"){ //ako je dijete BROJ
@@ -568,6 +573,7 @@ void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
         aditivni_izraz(node->djeca[0], tablica_node);
         multiplikativni_izraz(node->djeca[2], tablica_node);
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
+            //cout << node->djeca[0]->svojstva->tip << " " << node->djeca[2]->svojstva->tip << endl;
             greska(node);
         }
         else{
@@ -1450,12 +1456,17 @@ void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
 
-Node* parsiraj() {
+Node* parsiraj(string filename) {
+    ifstream file(filename);
     string line;
     vector<Node*> trenutni_roditelji = {};
     Node* root = nullptr;
+    if (!file.is_open()) {
+        cerr << "Greska: Ne mogu otvoriti datoteku " << filename << endl;
+        return nullptr;
+    }
 
-    while (getline(cin, line)) {
+    while (getline(file, line)) {
         int level = 0;
         while (line[level] == ' ') {
             if(line.size() == level) greska(root);
@@ -1533,7 +1544,7 @@ int main(void){
     Node* root = nullptr;
     Tablica_Node* tablica_node = new Tablica_Node(nullptr);
 
-        root = parsiraj();
+        root = parsiraj("C:/Users/amrad/OneDrive/Desktop/fer/3_1/ppj/labos_2/analizator/Izlaz.txt");
         prijevodna_jedinica(root, tablica_node);
 
 
