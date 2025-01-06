@@ -74,6 +74,9 @@ vector<string> split(const string& str, const string& delimiter) {
 
 void greska(Node* node){ //napraviti funkciju za ispis greske
     cout << node->svojstva->znak << " " << node->svojstva->leks_jedinka << endl;
+    for(Node* dijete : node->djeca){
+        cout << dijete->svojstva->znak << " " << dijete->svojstva->leks_jedinka << endl;
+    }
 }
 
 Node* provjeri_tablicu(string leks_jedinka, Tablica_Node* tablica_node){ //provjerava postoji li leks_jedinka u tablici ili njenim roditeljima
@@ -247,7 +250,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             }
         }
         else if(node->djeca[0]->svojstva->znak == "BROJ"){ //ako je dijete BROJ
-            long long broj = stoll(node->svojstva->leks_jedinka);
+            long long broj = stoll(node->djeca[0]->svojstva->leks_jedinka);
             if(!(broj <= INT_MAX && broj >= INT_MIN)){
                 greska(node);
             }
@@ -830,7 +833,7 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
         lista_naredbi(node->djeca[1], nova_tablica);
     }
 
-    else if(node->djeca.size() == 5 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
+    else if(node->djeca.size() == 4 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
     && node->djeca[1]->svojstva->znak == "<lista_deklaracija>" && node->djeca[2]->svojstva->znak == "<lista_naredbi>"
     && node->djeca[3]->svojstva->znak == "D_VIT_ZAGRADA"){
         lista_deklaracija(node->djeca[1], nova_tablica);
@@ -1530,14 +1533,9 @@ int main(void){
     Node* root = nullptr;
     Tablica_Node* tablica_node = new Tablica_Node(nullptr);
 
-    try{
         root = parsiraj();
         prijevodna_jedinica(root, tablica_node);
-    }
-    catch(...){
-        cout << "0" << endl;
-        return 0;
-    }
+
 
     vector<string> imena_definiranih_fja = {};
     vector<string> imena_deklariranih_fja = {};
@@ -1545,7 +1543,7 @@ int main(void){
     provjera_main_funkcije(tablica_node);
     provjeri_definirane_funkcije(tablica_node, &imena_definiranih_fja, &imena_deklariranih_fja);
 
-    for(const string& ime : imena_deklariranih_fja){
+    for(string& ime : imena_deklariranih_fja){
         if(find(imena_definiranih_fja.begin(), imena_definiranih_fja.end(), ime) == imena_definiranih_fja.end()){
             cout << "funkcija" << endl;
             return 0;
