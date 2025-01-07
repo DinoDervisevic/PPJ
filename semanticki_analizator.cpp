@@ -112,6 +112,7 @@ bool provjeri_znak(const string& leks_jedinka) {
 }
 
 bool provjeri_niz_znakova(const string& leks_jedinka) { //provjerava je li niz znakova ispravno zadan
+    //cout << leks_jedinka << endl;
     if (leks_jedinka.front() != '"' || leks_jedinka.back() != '"') { //mora imati " na pocetku i kraju
         return false;
     }
@@ -130,9 +131,6 @@ bool provjeri_niz_znakova(const string& leks_jedinka) { //provjerava je li niz z
                 uspio = false;
                 break;
             }
-        } else {
-            uspio = false;
-            break;
         }
     }
     return uspio;
@@ -195,6 +193,22 @@ int jel_ide_u_niz_znakova(Node* node){
         ide = ide + jel_ide_u_niz_znakova(dijete);
     }
     return ide;
+}
+
+Node* jel_ide_u_identifikator(Node* node){
+    if(node->svojstva->znak == "IDN"){
+        return node;
+    }
+    if(node->djeca.empty()){
+        return nullptr;
+    }
+    for(Node* dijete : node->djeca){
+        Node* pronadeno = jel_ide_u_identifikator(dijete);
+        if(pronadeno != nullptr){
+            return pronadeno;
+        }
+    }
+    return nullptr;
 }
 
 
@@ -268,8 +282,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             }
         }
         else if(node->djeca[0]->svojstva->znak == "ZNAK"){ //ako je dijete ZNAK
-            string leks_jedinka = node->svojstva->leks_jedinka;
-            if(provjeri_znak(leks_jedinka)){ //ako je ispravan znak, postavi svojstva
+            if(provjeri_znak(node->djeca[0]->svojstva->leks_jedinka)){ //ako je ispravan znak, postavi svojstva
                 node->svojstva->tip = "char";
                 node->svojstva->l_izraz = false;
             } else {
@@ -277,8 +290,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             }
         }
         else if(node->djeca[0]->svojstva->znak == "NIZ_ZNAKOVA"){ //ako je dijete NIZ_ZNAKOVA
-            string leks_jedinka = node->svojstva->leks_jedinka;
-            if(provjeri_niz_znakova(leks_jedinka)){ //ako je ispravan niz znakova, postavi svojstva
+            if(provjeri_niz_znakova(node->djeca[0]->svojstva->leks_jedinka)){ //ako je ispravan niz znakova, postavi svojstva
                 node->svojstva->tip = "niz(const(char))";
                 node->svojstva->l_izraz = false;
             } else {
@@ -1328,7 +1340,8 @@ void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
     else if(node->djeca.size() == 4 && node->djeca[0]->svojstva->znak == "IDN" 
     && node->djeca[1]->svojstva->znak == "L_UGL_ZAGRADA" && node->djeca[2]->svojstva->znak == "BROJ"
     && node->djeca[3]->svojstva->znak == "D_UGL_ZAGRADA"){
-        if(node->djeca[2]->svojstva->tip != "int" || stoi(node->djeca[2]->svojstva->leks_jedinka) <= 0
+        //cout << node->djeca[2]->svojstva->leks_jedinka << "a a" << node->djeca[2]->svojstva->tip << endl;
+        if(stoi(node->djeca[2]->svojstva->leks_jedinka) <= 0
         || stoi(node->djeca[2]->svojstva->leks_jedinka) > 1024){
             greska(node);
         }
@@ -1341,7 +1354,7 @@ void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
 
         node->svojstva->tip = "niz(" + node->svojstva->ntip + ")";
         node->svojstva->leks_jedinka = node->djeca[0]->svojstva->leks_jedinka;
-        node->svojstva->broj_elemenata = stoi(node->svojstva->leks_jedinka);
+        node->svojstva->broj_elemenata = stoi(node->djeca[2]->svojstva->leks_jedinka);
 
         tablica_node->zapis.insert({node->djeca[0]->svojstva->leks_jedinka, node});
     }
@@ -1413,6 +1426,12 @@ void inicijalizator(Node* node, Tablica_Node* tablica_node){
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izraz_pridruzivanja>"){
         izraz_pridruzivanja(node->djeca[0], tablica_node);
         int broj = jel_ide_u_niz_znakova(node);
+        Node* provjera = jel_ide_u_identifikator(node);
+        if(provjera != nullptr){
+            if(!provjera->svojstva->konst){
+                greska(node);
+            }
+        }
         if(broj != 0){
             node->svojstva->tip = "NIZ_ZNAKOVA";
             node->svojstva->broj_elemenata = broj;
