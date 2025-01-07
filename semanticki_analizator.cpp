@@ -1433,7 +1433,7 @@ void inicijalizator(Node* node, Tablica_Node* tablica_node){
         izraz_pridruzivanja(node->djeca[0], tablica_node);
         int broj = jel_ide_u_niz_znakova(node);
         Node* provjera = jel_ide_u_identifikator(node);
-        if(provjera != nullptr){
+        if(provjera != nullptr && provjera->svojstva->tip.find("niz(") != string::npos){
             if(!provjera->svojstva->konst){
                 greska(node);
             }
