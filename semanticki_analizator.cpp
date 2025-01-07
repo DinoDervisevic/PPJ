@@ -80,6 +80,7 @@ void greska(Node* node){ //napraviti funkciju za ispis greske
         cout << dijete->svojstva->znak << "(" << dijete->svojstva->redak << "," << dijete->svojstva->leks_jedinka << ")";
         else cout << dijete->svojstva->znak;
     }
+    cout << endl;
     exit(0);
 }
 
@@ -323,6 +324,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
         primarni_izraz(node->djeca[0], tablica_node); //provjeri primarni izraz
         node->svojstva->tip = node->djeca[0]->svojstva->tip;
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
+        node->svojstva->argumenti = node->djeca[0]->svojstva->argumenti;
     }
 
     else if(node->djeca.size() == 4 && node->djeca[0]->svojstva->znak == "<postfiks_izraz>" 
@@ -335,11 +337,11 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
         else{ //ako se radi o nizu
             string podtip = node->djeca[0]->svojstva->tip.substr(4, node->djeca[0]->svojstva->tip.size()-5);
             if(podtip.substr(0, 5) == "const"){
-                node->svojstva->tip = "char";
+                node->svojstva->tip = podtip;
                 node->svojstva->l_izraz = false;
             }
             else{
-                node->svojstva->tip = "char";
+                node->svojstva->tip = podtip;
                 node->svojstva->l_izraz = true;
             }
         }
@@ -372,6 +374,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
     node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<lista_argumenata>"
     && node->djeca[3]->svojstva->znak == "D_ZAGRADA"){
         postfiks_izraz(node->djeca[0], tablica_node);
+        lista_argumenata(node->djeca[2], tablica_node);
         if(node->djeca[0]->svojstva->tip.substr(0, 8) != "funkcija"){
             greska(node);
         }
@@ -380,11 +383,11 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
                 greska(node);
             }
             else{
-                if(node->djeca[0]->svojstva->argumenti.size() != node->djeca[2]->djeca.size()){
+                if(node->djeca[0]->svojstva->argumenti.size() != node->djeca[2]->svojstva->argumenti.size()){
                     greska(node);
                 }
                 for(int i = 0; i < node->djeca[0]->svojstva->argumenti.size(); i++){
-                    if(!moze_se_pretvoriti(node->djeca[2]->djeca[i]->svojstva->tip, node->djeca[0]->svojstva->argumenti[i])){
+                    if(!moze_se_pretvoriti(node->djeca[2]->svojstva->argumenti[i], node->djeca[0]->svojstva->argumenti[i])){
                         greska(node);
                     }
                 }
@@ -488,7 +491,9 @@ void cast_izraz(Node* node, Tablica_Node* tablica_node){
     && node->djeca[3]->svojstva->znak == "<cast_izraz>"){
         ime_tipa(node->djeca[1], tablica_node);
         cast_izraz(node->djeca[3], tablica_node);
-        if(moze_se_pretvoriti(node->djeca[3]->svojstva->tip, node->djeca[1]->svojstva->tip)){
+        //cout << node->djeca[1]->svojstva->tip << " " << node->djeca[3]->svojstva->tip << endl;
+        if(moze_se_pretvoriti(node->djeca[3]->svojstva->tip, node->djeca[1]->svojstva->tip)
+        || (node->djeca[3]->svojstva->tip == "int" && node->djeca[1]->svojstva->tip == "char")){
             node->svojstva->tip = node->djeca[1]->svojstva->tip;
             node->svojstva->l_izraz = false;
         }
@@ -807,6 +812,7 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "OP_PRIDRUZI" && node->djeca[2]->svojstva->znak == "<izraz_pridruzivanja>"){
         postfiks_izraz(node->djeca[0], tablica_node);
         izraz_pridruzivanja(node->djeca[2], tablica_node);
+        //cout << node->djeca[0]->svojstva->tip << " " << node->djeca[2]->svojstva->tip << endl;
         if(node->djeca[0]->svojstva->l_izraz == false || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, node->djeca[0]->svojstva->tip)){
             greska(node);
         }
@@ -1037,11 +1043,11 @@ void naredba_skoka(Node* node, Tablica_Node* tablica_node){
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "KR_RETURN"
     && node->djeca[1]->svojstva->znak == "<izraz>" && node->djeca[2]->svojstva->znak == "TOCKAZAREZ"){
+        izraz(node->djeca[1], tablica_node);
         string tip = jel_u_funkciji(node);
-        if(tip == "void"){
+        if(tip == "void" || !moze_se_pretvoriti(node->djeca[1]->svojstva->tip, tip)){
             greska(node);
         }
-        izraz(node->djeca[1], tablica_node);
         node->svojstva->tip = tip;
     }
 
