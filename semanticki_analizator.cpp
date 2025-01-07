@@ -1107,7 +1107,7 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
             if(prijasnja_definicija->svojstva->argumenti.size() != 0){
                 greska(node);
             }
-            if(prijasnja_definicija->svojstva->tip.find(" -> ") != string::npos 
+            if(prijasnja_definicija->svojstva->tip.find(" -> ") == string::npos 
             || split(prijasnja_definicija->svojstva->tip, " -> ")[1] != node->djeca[0]->svojstva->tip){
                 greska(node);
             }
@@ -1141,7 +1141,7 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
                     greska(node);
                 }
             }
-            if(prijasnja_definicija->svojstva->tip.find(" -> ") != string::npos 
+            if(prijasnja_definicija->svojstva->tip.find(" -> ") == string::npos 
             || split(prijasnja_definicija->svojstva->tip, " -> ")[1] != node->djeca[0]->svojstva->tip){
                 greska(node);
             }
@@ -1561,21 +1561,16 @@ void provjera_main_funkcije(Tablica_Node* tablica_node){
     cout << "main" << endl;
 }
 
-void provjeri_definirane_funkcije(Tablica_Node* tablica_node, 
-vector<string>* imena_definiranih_fja, vector<string>* imena_deklariranih_fja) { //TODO
-    for (const auto& par : tablica_node->zapis) {
-        Node* node = par.second;
-        if (node->svojstva->tip.find("funkcija(") != string::npos) {
-            if(node->svojstva->fja_definirana){
-                imena_definiranih_fja->push_back(node->svojstva->leks_jedinka);
-            }
-            else{
-                imena_deklariranih_fja->push_back(node->svojstva->leks_jedinka);
-            }
+void provjeri_definirane_funkcije(Node* node, 
+vector<string>* imena_definiranih_fja, vector<string>* imena_deklariranih_fja) {
+        if (node->svojstva->znak == "<definicija_funkcije>") {
+            imena_definiranih_fja->push_back(node->svojstva->leks_jedinka);
         }
-    }
-    if (!tablica_node->djeca.empty()) {
-        for(auto& dijete : tablica_node->djeca){
+        else if(node->svojstva->znak == "<izravni_deklarator>" && node->svojstva->tip.find("funkcija(") != string::npos){
+            imena_deklariranih_fja->push_back(node->svojstva->leks_jedinka);
+        }
+    if (!node->djeca.empty()) {
+        for(auto& dijete : node->djeca){
             provjeri_definirane_funkcije(dijete, imena_definiranih_fja, imena_deklariranih_fja);
         }
     }
@@ -1594,7 +1589,7 @@ int main(void){
     vector<string> imena_deklariranih_fja = {};
 
     provjera_main_funkcije(tablica_node);
-    provjeri_definirane_funkcije(tablica_node, &imena_definiranih_fja, &imena_deklariranih_fja);
+    provjeri_definirane_funkcije(root, &imena_definiranih_fja, &imena_deklariranih_fja);
 
     for(string& ime : imena_deklariranih_fja){
         if(find(imena_definiranih_fja.begin(), imena_definiranih_fja.end(), ime) == imena_definiranih_fja.end()){
