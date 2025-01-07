@@ -73,9 +73,12 @@ vector<string> split(const string& str, const string& delimiter) {
 
 
 void greska(Node* node){ //napraviti funkciju za ispis greske
-    cout << node->svojstva->znak << " " << node->svojstva->redak << " " << node->svojstva->leks_jedinka << endl;
+    cout << node->svojstva->znak << " ::=";
     for(Node* dijete : node->djeca){
-        cout << dijete->svojstva->znak << " " << dijete->svojstva->redak << " " << dijete->svojstva->leks_jedinka << endl;
+        cout << " ";
+        if(dijete->svojstva->redak != -1)
+        cout << dijete->svojstva->znak << "(" << dijete->svojstva->redak << "," << dijete->svojstva->leks_jedinka << ")";
+        else cout << dijete->svojstva->znak;
     }
     exit(0);
 }
@@ -834,6 +837,17 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     Tablica_Node* nova_tablica = new Tablica_Node(tablica_node);
     tablica_node->djeca.push_back(nova_tablica);
 
+    if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
+        if(node->roditelj->djeca[3]->svojstva->znak == "<lista_parametara>"){
+            for(int i = 0; i < node->roditelj->djeca[3]->svojstva->argumenti.size(); i++){
+                Node* parametar = new Node();
+                parametar->svojstva->tip = node->roditelj->djeca[3]->svojstva->argumenti[i];
+                parametar->svojstva->leks_jedinka = node->roditelj->djeca[3]->svojstva->argumenti_imena[i];
+                nova_tablica->zapis[parametar->svojstva->leks_jedinka] = parametar;
+            }
+        }
+    }
+
     if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
     && node->djeca[1]->svojstva->znak == "<lista_naredbi>" && node->djeca[2]->svojstva->znak == "D_VIT_ZAGRADA"){
         lista_naredbi(node->djeca[1], nova_tablica);
@@ -1490,7 +1504,10 @@ Node* parsiraj(string filename) {
         }
 
 
-        if(level > 0)trenutni_roditelji[level-1]->djeca.push_back(node);
+        if(level > 0){
+            trenutni_roditelji[level-1]->djeca.push_back(node);
+            node->roditelj = trenutni_roditelji[level-1];
+        }
         if(trenutni_roditelji.size() == level){
             trenutni_roditelji.push_back(node);
         }
