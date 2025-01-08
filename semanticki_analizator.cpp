@@ -220,14 +220,11 @@ Node* jel_ide_u_identifikator(Node* node){
 
 Node* provjeri_deklaracije(Tablica_Node* tablica, string ime){
     Tablica_Node* trenutna_tablica = tablica;
-    while(trenutna_tablica != nullptr){
         for(auto it = trenutna_tablica->deklarirane_funkcije.begin(); it != trenutna_tablica->deklarirane_funkcije.end(); it++){
             if((*it)->svojstva->leks_jedinka == ime){
                 return *it;
             }
         }
-        trenutna_tablica = trenutna_tablica->roditelj;
-    }
     return nullptr;
 }
 
@@ -1151,6 +1148,9 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
         if(node->djeca[0]->svojstva->konst){
             greska(node);
         }
+        if(tablica_node->roditelj != nullptr){ //mora biti globalna razina
+            greska(node);
+        }
 
         Node* prijasnja_definicija = provjeri_definicije(tablica_node, node->djeca[1]->svojstva->leks_jedinka);
         Node* prijasnja_deklaracija = provjeri_deklaracije(tablica_node, node->djeca[1]->svojstva->leks_jedinka);   
@@ -1213,6 +1213,7 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
         node->svojstva->argumenti = node->djeca[3]->svojstva->argumenti;
         node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
         tablica_node->zapis.insert({node->djeca[1]->svojstva->leks_jedinka, node});
+        tablica_node->definirane_funkcije.push_back(node); 
         slozena_naredba(node->djeca[5], tablica_node);
         node->svojstva->fja_definirana = true;
     }
@@ -1394,6 +1395,9 @@ void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "IDN"){
         node->svojstva->tip = node->svojstva->ntip;
         node->svojstva->leks_jedinka = node->djeca[0]->svojstva->leks_jedinka;
+        if(node->svojstva->tip.substr(0, 5) == "const"){
+            node->svojstva->konst = true;
+        }
 
         if(node->svojstva->tip == "void"){
             greska(node);
@@ -1422,6 +1426,9 @@ void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
 
         node->svojstva->tip = "niz(" + node->svojstva->ntip + ")";
         node->svojstva->leks_jedinka = node->djeca[0]->svojstva->leks_jedinka;
+        if(node->svojstva->ntip.substr(0, 5) == "const"){
+            node->svojstva->konst = true;
+        }
         node->svojstva->broj_elemenata = stoi(node->djeca[2]->svojstva->leks_jedinka);
 
         tablica_node->zapis.insert({node->djeca[0]->svojstva->leks_jedinka, node});
@@ -1628,18 +1635,22 @@ void provjera_main_funkcije(Tablica_Node* tablica_node){
     cout << "main" << endl;
 }
 
-void provjeri_definirane_funkcije(Node* node, 
-vector<string>* imena_definiranih_fja, vector<string>* imena_deklariranih_fja) {
-        if (node->svojstva->znak == "<definicija_funkcije>") {
-            imena_definiranih_fja->push_back(node->svojstva->leks_jedinka);
+void provjeri_definirane_funkcije(Tablica_Node* tablica, Tablica_Node* tablica_nova) {
+    Tablica_Node* trenutna_tablica = tablica_nova;
+
+    for(auto it = trenutna_tablica->deklarirane_funkcije.begin(); it != trenutna_tablica->deklarirane_funkcije.end(); it++){
+        for(auto it2 = tablica->definirane_funkcije.begin(); it2 != tablica->definirane_funkcije.end(); it2++){
+            if((*it)->svojstva->leks_jedinka == (*it2)->svojstva->leks_jedinka
+            && (*it)->svojstva->tip == (*it2)->svojstva->tip){
+                break;
+            }
+            cout << "funkcija" << endl;
+            return;
         }
-        else if(node->svojstva->znak == "<izravni_deklarator>" && node->svojstva->tip.find("funkcija(") != string::npos){
-            imena_deklariranih_fja->push_back(node->svojstva->leks_jedinka);
-        }
-    if (!node->djeca.empty()) {
-        for(auto& dijete : node->djeca){
-            provjeri_definirane_funkcije(dijete, imena_definiranih_fja, imena_deklariranih_fja);
-        }
+    }
+
+    for(auto dijete : trenutna_tablica->djeca){
+        provjeri_definirane_funkcije(tablica, dijete);
     }
 }
 
@@ -1651,19 +1662,9 @@ int main(void){
         root = parsiraj("C:/Users/amrad/OneDrive/Desktop/fer/3_1/ppj/labos_2/analizator/Izlaz.txt");
         prijevodna_jedinica(root, tablica_node);
 
-
-    vector<string> imena_definiranih_fja = {};
-    vector<string> imena_deklariranih_fja = {};
-
     provjera_main_funkcije(tablica_node);
-    provjeri_definirane_funkcije(root, &imena_definiranih_fja, &imena_deklariranih_fja);
+    provjeri_definirane_funkcije(tablica_node, tablica_node);
 
-    for(string& ime : imena_deklariranih_fja){
-        if(find(imena_definiranih_fja.begin(), imena_definiranih_fja.end(), ime) == imena_definiranih_fja.end()){
-            cout << "funkcija" << endl;
-            return 0;
-        }
-    }
     
     return 0;
 }
