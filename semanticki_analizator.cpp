@@ -1639,11 +1639,15 @@ void provjeri_definirane_funkcije(Tablica_Node* tablica, Tablica_Node* tablica_n
     Tablica_Node* trenutna_tablica = tablica_nova;
 
     for(auto it = trenutna_tablica->deklarirane_funkcije.begin(); it != trenutna_tablica->deklarirane_funkcije.end(); it++){
+        bool uspio = false;
         for(auto it2 = tablica->definirane_funkcije.begin(); it2 != tablica->definirane_funkcije.end(); it2++){
             if((*it)->svojstva->leks_jedinka == (*it2)->svojstva->leks_jedinka
             && (*it)->svojstva->tip == (*it2)->svojstva->tip){
+                uspio = true;
                 break;
             }
+        }
+        if(!uspio){
             cout << "funkcija" << endl;
             return;
         }
