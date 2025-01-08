@@ -139,9 +139,10 @@ bool provjeri_niz_znakova(const string& leks_jedinka) { //provjerava je li niz z
 
 bool moze_se_pretvoriti(string prvi, string drugi) { //provjerava moze li se tip from pretvoriti u tip to
     if (prvi == drugi) return true;
-    if (prvi == "char" && drugi == "int") return true;
+    if (prvi == "char" && (drugi == "const(char)" || drugi == "int" || drugi == "const(int)")) return true;
     if (prvi == "const(char)" && (drugi == "char" || drugi == "int" || drugi == "const(int)")) return true;
     if (prvi == "const(int)" && drugi == "int") return true;
+    if (prvi == "int" && drugi == "const(int)") return true;
     if (prvi == "niz(char)" && drugi == "niz(const(char))") return true;
     if (prvi == "niz(int)" && drugi == "niz(const(int))") return true;
     return false;
@@ -198,9 +199,11 @@ int jel_ide_u_niz_znakova(Node* node){
 
 Node* jel_ide_u_identifikator(Node* node){
     if(node->svojstva->znak == "IDN"){
+        //cout << node->svojstva->znak << " " << node->svojstva->leks_jedinka << " " << node->svojstva->tip << endl;
         return node;
     }
     if(node->djeca.empty()){
+        
         return nullptr;
     }
     for(Node* dijete : node->djeca){
@@ -270,6 +273,11 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                 node->svojstva->l_izraz = pronadeno->svojstva->l_izraz;
                 node->svojstva->konst = pronadeno->svojstva->konst;
                 node->svojstva->argumenti = pronadeno->svojstva->argumenti;
+
+                node->djeca[0]->svojstva->tip = pronadeno->svojstva->tip;
+                node->djeca[0]->svojstva->l_izraz = pronadeno->svojstva->l_izraz;
+                node->djeca[0]->svojstva->konst = pronadeno->svojstva->konst;
+                node->djeca[0]->svojstva->argumenti = pronadeno->svojstva->argumenti;
             }
         }
         else if(node->djeca[0]->svojstva->znak == "BROJ"){ //ako je dijete BROJ
@@ -494,13 +502,17 @@ void cast_izraz(Node* node, Tablica_Node* tablica_node){
     && node->djeca[3]->svojstva->znak == "<cast_izraz>"){
         ime_tipa(node->djeca[1], tablica_node);
         cast_izraz(node->djeca[3], tablica_node);
-        //cout << node->djeca[1]->svojstva->tip << " " << node->djeca[3]->svojstva->tip << endl;
+        
         if(moze_se_pretvoriti(node->djeca[3]->svojstva->tip, node->djeca[1]->svojstva->tip)
-        || (node->djeca[3]->svojstva->tip == "int" && node->djeca[1]->svojstva->tip == "char")){
+        || (node->djeca[3]->svojstva->tip == "int" && node->djeca[1]->svojstva->tip == "char")
+        || (node->djeca[3]->svojstva->tip == "const(int)" && node->djeca[1]->svojstva->tip == "const(char)")
+        || (node->djeca[3]->svojstva->tip == "int" && node->djeca[1]->svojstva->tip == "const(char)")
+        || (node->djeca[3]->svojstva->tip == "const(int)" && node->djeca[1]->svojstva->tip == "char")){
             node->svojstva->tip = node->djeca[1]->svojstva->tip;
             node->svojstva->l_izraz = false;
         }
         else{
+            cout << node->djeca[1]->svojstva->tip << " " << node->djeca[3]->svojstva->tip << endl;
             greska(node);
         }
     }
@@ -1300,18 +1312,26 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
         izravni_deklarator(node->djeca[0], tablica_node);
         inicijalizator(node->djeca[2], tablica_node);
 
+        Node* provjera = jel_ide_u_identifikator(node->djeca[2]);
+        if(provjera != nullptr && provjera->svojstva->tip.find("niz(") != string::npos){
+            if(!provjera->svojstva->konst){
+                greska(node);
+            }
+        }
+
         string tip_deklrator = node->djeca[0]->svojstva->tip;
         string tip_inicijalizator = node->djeca[2]->svojstva->tip;
-        if (tip_deklrator.substr(0, 4) != "niz(" && (tip_deklrator == tip_inicijalizator 
-        || (tip_deklrator.substr(0, 6) == "const(" && tip_deklrator.substr(6, tip_deklrator.size() - 7) == tip_inicijalizator))) {
+        if (tip_deklrator.substr(0, 4) != "niz(") {
 
             if (!moze_se_pretvoriti(tip_inicijalizator, tip_deklrator)) {
+                
                 greska(node);
             }
         } else if (tip_deklrator.substr(0, 4) == "niz(") {
 
             string element_tip = tip_deklrator.substr(4, tip_deklrator.size() - 5);
             if (node->djeca[2]->svojstva->broj_elemenata > node->djeca[0]->svojstva->broj_elemenata) {
+
                 greska(node);
             }
             for (const string& u : node->djeca[2]->svojstva->tipovi) {
@@ -1435,12 +1455,7 @@ void inicijalizator(Node* node, Tablica_Node* tablica_node){
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izraz_pridruzivanja>"){
         izraz_pridruzivanja(node->djeca[0], tablica_node);
         int broj = jel_ide_u_niz_znakova(node);
-        Node* provjera = jel_ide_u_identifikator(node);
-        if(provjera != nullptr && provjera->svojstva->tip.find("niz(") != string::npos){
-            if(!provjera->svojstva->konst){
-                greska(node);
-            }
-        }
+        
         if(broj != 0){
             node->svojstva->tip = "NIZ_ZNAKOVA";
             node->svojstva->broj_elemenata = broj;
