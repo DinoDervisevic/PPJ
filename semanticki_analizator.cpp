@@ -273,6 +273,9 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             }
         }
         else if(node->djeca[0]->svojstva->znak == "BROJ"){ //ako je dijete BROJ
+            if(node->djeca[0]->svojstva->leks_jedinka.size() > 12){
+                greska(node);
+            }
             long long broj = stoll(node->djeca[0]->svojstva->leks_jedinka);
             if(!(broj <= INT_MAX && broj >= INT_MIN)){
                 greska(node);
