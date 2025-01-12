@@ -306,20 +306,30 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             }
         }
         else if(node->djeca[0]->svojstva->znak == "BROJ"){ //ako je dijete BROJ
-            if(node->djeca[0]->svojstva->leks_jedinka.size() > 12){
+            string broj_str = node->djeca[0]->svojstva->leks_jedinka;
+            long long broj;
+            if(broj_str.size() > 12){
                 greska(node);
             }
-            long long broj = stoll(node->djeca[0]->svojstva->leks_jedinka);
-            if(!(broj <= INT_MAX && broj >= INT_MIN)){
+            if(broj_str.size() > 2 && broj_str[0] == '0' && (broj_str[1] == 'x' || broj_str[1] == 'X')){ // heksadekadski broj
+                broj = stoll(broj_str, nullptr, 16);
+            } else { // decimalni broj
+                broj = stoll(broj_str);
+            }
+            if(node->roditelj->roditelj->roditelj->roditelj->svojstva->znak == "<unarni_izraz>"
+            && node->roditelj->roditelj->roditelj->roditelj->djeca[0]->djeca[0]->svojstva->znak == "MINUS"){
+                if(broj-1 > INT_MAX){
+                    greska(node);
+                }
+            }
+            else if(!(broj <= INT_MAX && broj >= INT_MIN)){
                 greska(node);
             }
-            else{ //ako je u intervalu int, postavi svojstva
-                node->svojstva->tip = "int";
-                node->svojstva->l_izraz = false;
+            node->svojstva->tip = "int";
+            node->svojstva->l_izraz = false;
 
-                node->djeca[0]->svojstva->tip = "int";
-                node->djeca[0]->svojstva->l_izraz = false;
-            }
+            node->djeca[0]->svojstva->tip = "int";
+            node->djeca[0]->svojstva->l_izraz = false;
         }
         else if(node->djeca[0]->svojstva->znak == "ZNAK"){ //ako je dijete ZNAK
             if(provjeri_znak(node->djeca[0]->svojstva->leks_jedinka)){ //ako je ispravan znak, postavi svojstva
@@ -1413,7 +1423,7 @@ void izravni_deklarator(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "L_UGL_ZAGRADA" && node->djeca[2]->svojstva->znak == "BROJ"
     && node->djeca[3]->svojstva->znak == "D_UGL_ZAGRADA"){
         //cout << node->djeca[2]->svojstva->leks_jedinka << "a a" << node->djeca[2]->svojstva->tip << endl;
-        if(stoi(node->djeca[2]->svojstva->leks_jedinka) <= 0
+        if(node->djeca[2]->svojstva->leks_jedinka.size() > 5 || stoi(node->djeca[2]->svojstva->leks_jedinka) <= 0
         || stoi(node->djeca[2]->svojstva->leks_jedinka) > 1024){
             greska(node);
         }
@@ -1570,16 +1580,13 @@ void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
 //------------------------------------------------------------------------------------------------
 
 Node* parsiraj(string filename) {
-    ifstream file(filename);
+    //ifstream file(filename);
     string line;
     vector<Node*> trenutni_roditelji = {};
     Node* root = nullptr;
-    if (!file.is_open()) {
-        cerr << "Greska: Ne mogu otvoriti datoteku " << filename << endl;
-        return nullptr;
-    }
 
-    while (getline(file, line)) {
+
+    while (getline(cin, line)) {
         int level = 0;
         while (line[level] == ' ') {
             if(line.size() == level) greska(root);
