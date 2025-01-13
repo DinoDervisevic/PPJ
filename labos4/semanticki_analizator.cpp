@@ -9,8 +9,15 @@
 #include <queue>
 #include <climits> // Add this include for INT_MAX and INT_MIN
 #include <sstream>
+#include <stack>
 
 using namespace std;
+
+int idn_broj = 1;
+
+vector <string> kod;
+
+int registri = 5;
 
 class Node_svojstva{
     public:
@@ -26,6 +33,7 @@ class Node_svojstva{
         int broj_elemenata = 0; //samo za deklaracije nizova
         vector<string> tipovi = {}; //samo za inicijalizaciju nizova (tj <inicijalizator>)
         bool fja_definirana = false; //gledamo ima li funckija definiciju ili samo deklaraciju
+        bool jeParametar = false; //gledamo je li varijabla parametar funkcije
 
         Node_svojstva(string znak, int redak, string leks_jedinka) : znak(znak), redak(redak), leks_jedinka(leks_jedinka), konst(false) {}
 
@@ -37,6 +45,7 @@ class Node_svojstva{
 
 class Node{
     public:
+        int identifikator;
         Node_svojstva* svojstva = nullptr;
         Node* roditelj = nullptr;
         vector<Node*> djeca;
@@ -318,6 +327,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             }
             if(node->roditelj->roditelj->roditelj->roditelj->svojstva->znak == "<unarni_izraz>"
             && node->roditelj->roditelj->roditelj->roditelj->djeca[0]->djeca[0]->svojstva->znak == "MINUS"){
+                broj_str  = "-" + broj_str;
                 if(broj-1 > INT_MAX){
                     greska(node);
                 }
@@ -330,6 +340,12 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
 
             node->djeca[0]->svojstva->tip = "int";
             node->djeca[0]->svojstva->l_izraz = false;
+
+            string s = "\tMOVE %D " + broj_str + ", R6";
+            kod.push_back(s);
+            s = "\tMOVE %D " + broj_str + ", R" + to_string(registri);
+            registri--;
+            kod.push_back(s);
         }
         else if(node->djeca[0]->svojstva->znak == "ZNAK"){ //ako je dijete ZNAK
             if(provjeri_znak(node->djeca[0]->svojstva->leks_jedinka)){ //ako je ispravan znak, postavi svojstva
@@ -891,6 +907,7 @@ void izraz(Node* node, Tablica_Node* tablica_node){
         izraz_pridruzivanja(node->djeca[0], tablica_node);
         node->svojstva->tip = node->djeca[0]->svojstva->tip;
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
+        registri = 5;
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<izraz>" 
@@ -899,6 +916,7 @@ void izraz(Node* node, Tablica_Node* tablica_node){
         izraz_pridruzivanja(node->djeca[2], tablica_node);
         node->svojstva->tip = node->djeca[2]->svojstva->tip;
         node->svojstva->l_izraz = false;
+        registri = 5;
     }
 
     else{
@@ -918,6 +936,7 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
                 Node* parametar = new Node();
                 parametar->svojstva->tip = node->roditelj->djeca[3]->svojstva->argumenti[i];
                 parametar->svojstva->leks_jedinka = node->roditelj->djeca[3]->svojstva->argumenti_imena[i];
+                parametar->svojstva->jeParametar = true;
                 nova_tablica->zapis[parametar->svojstva->leks_jedinka] = parametar;
             }
         }
@@ -926,6 +945,9 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
     && node->djeca[1]->svojstva->znak == "<lista_naredbi>" && node->djeca[2]->svojstva->znak == "D_VIT_ZAGRADA"){
         lista_naredbi(node->djeca[1], nova_tablica);
+        if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
+            kod.push_back("\tRET");
+        }
     }
 
     else if(node->djeca.size() == 4 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
@@ -933,6 +955,17 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     && node->djeca[3]->svojstva->znak == "D_VIT_ZAGRADA"){
         lista_deklaracija(node->djeca[1], nova_tablica);
         lista_naredbi(node->djeca[2], nova_tablica);
+        int i = 0;
+        for(auto node : nova_tablica->zapis){
+            if(!node.second->svojstva->jeParametar){
+                i++;
+            } 
+        }
+        string s = "\tADD R7, " + to_string(i*4) + ", R7";
+        kod.push_back(s);
+        if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
+            kod.push_back("\tRET");
+        }
     }
 
     else{
@@ -1154,6 +1187,7 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "IDN" && node->djeca[2]->svojstva->znak == "L_ZAGRADA"
     && node->djeca[3]->svojstva->znak == "KR_VOID" && node->djeca[4]->svojstva->znak == "D_ZAGRADA"
     && node->djeca[5]->svojstva->znak == "<slozena_naredba>"){
+        kod.push_back("F_" + node->djeca[1]->svojstva->leks_jedinka);
         ime_tipa(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->konst){
             greska(node);
@@ -1189,6 +1223,7 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "IDN" && node->djeca[2]->svojstva->znak == "L_ZAGRADA"
     && node->djeca[3]->svojstva->znak == "<lista_parametara>" && node->djeca[4]->svojstva->znak == "D_ZAGRADA"
     && node->djeca[5]->svojstva->znak == "<slozena_naredba>"){
+        kod.push_back("F_" + node->djeca[1]->svojstva->leks_jedinka);
         ime_tipa(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->konst){
             greska(node);
@@ -1580,13 +1615,13 @@ void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
 //------------------------------------------------------------------------------------------------
 
 Node* parsiraj(string filename) {
-    //ifstream file(filename);
+    ifstream file(filename);
     string line;
     vector<Node*> trenutni_roditelji = {};
     Node* root = nullptr;
 
 
-    while (getline(cin, line)) {
+    while (getline(file, line)) {
         int level = 0;
         while (line[level] == ' ') {
             if(line.size() == level) greska(root);
@@ -1596,6 +1631,8 @@ Node* parsiraj(string filename) {
         line = line.substr(level);
 
         Node* node = new Node();
+        node->identifikator = idn_broj;
+        idn_broj++;
         if(root == nullptr){
             root = node;
         }
@@ -1665,16 +1702,27 @@ void provjeri_definirane_funkcije(Tablica_Node* tablica, Tablica_Node* tablica_n
     }
 }
 
-int main(void){
+void ispisi_kod(){
+    for(auto it = kod.begin(); it != kod.end(); it++){
+        cout << *it << endl;
+    }
+}
 
+int main(void){
     Node* root = nullptr;
     Tablica_Node* tablica_node = new Tablica_Node(nullptr);
 
-        root = parsiraj("C:/Users/amrad/OneDrive/Desktop/fer/3_1/ppj/labos_2/analizator/Izlaz.txt");
+    kod.push_back("\tMOVE 40000, R7");
+    kod.push_back("\tCALL F_main");
+    kod.push_back("\tHALT");
+
+        root = parsiraj("ulaz.txt");
         prijevodna_jedinica(root, tablica_node);
 
     provjera_main_funkcije(tablica_node);
     provjeri_definirane_funkcije(tablica_node, tablica_node);
+
+    ispisi_kod();
 
     
     return 0;
