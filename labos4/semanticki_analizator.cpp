@@ -83,7 +83,8 @@ Node* trenutniIzravniDeklarator;
 //#ret
 bool aktivnaNaredbaSkoka = false;
 map <string, string> adresa; // tako da znam gdje je na stogu koja varijabla
-
+//#vb
+int brojacVelikihBrojeva = 0;
 //---------------------------
 
 
@@ -389,7 +390,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             node->djeca[0]->svojstva->tip = "int";
             node->djeca[0]->svojstva->l_izraz = false;
 
-                // -----------------------------------------------------------------------
+            // -----------------------------------------------------------------------
 			
 			if (aktivnaDeklaracija) { // Kao došli smo do broja tokom deklaracije
             	if (isGlobal) { // Definicija globalne varijable, trazi #gl
@@ -403,14 +404,29 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
 				}
 			} else {
             // -----------------------------------------------------------------------
-        
-		    string s = "\tMOVE %D " + broj_str + ", R6";
-            kod.push_back(s);
-            s = "\tMOVE %D " + broj_str + ", R" + to_string(registri);
-            registri--;
-            kod.push_back(s);
-            }
- 
+        		if ( stoi(broj_str) > 79999 ) {
+        			brojacVelikihBrojeva ++;
+        			string s = "G_" + to_string(brojacVelikihBrojeva) + "\tDW %D " + broj_str;
+				    
+					adresa[to_string(brojacVelikihBrojeva)] = "G_" + to_string(brojacVelikihBrojeva); //#vb
+				    
+					kod.push_back(s);
+					
+					s = "\tLOAD R" + to_string(registri) + ", (G_" + to_string(brojacVelikihBrojeva) +")";
+		            kod.push_back(s);
+		            s = "\tLOAD R6, (G_" + to_string(brojacVelikihBrojeva) +")";
+		            kod.push_back(s);
+		            
+		            registri--;
+		            
+				} else {
+					string s = "\tMOVE %D " + broj_str + ", R6";
+		            kod.push_back(s);
+		            s = "\tMOVE %D " + broj_str + ", R" + to_string(registri);
+		            registri--;
+		            kod.push_back(s);
+            	}
+			}
         }
         else if(node->djeca[0]->svojstva->znak == "ZNAK"){ //ako je dijete ZNAK
             if(provjeri_znak(node->djeca[0]->svojstva->leks_jedinka)){ //ako je ispravan znak, postavi svojstva
