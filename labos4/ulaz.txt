@@ -29,6 +29,6 @@
                    <unarni_izraz>
                     <postfiks_izraz>
                      <primarni_izraz>
-                      BROJ 2 32
+                      BROJ 2 1234567890
        TOCKAZAREZ 2 ;
     D_VIT_ZAGRADA 3 }
