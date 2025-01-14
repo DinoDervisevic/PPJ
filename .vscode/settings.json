@@ -4,6 +4,7 @@
         ".fantomasignore": "ignore",
         "*.tcc": "cpp",
         "initializer_list": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "ostream": "cpp"
     }
 }
