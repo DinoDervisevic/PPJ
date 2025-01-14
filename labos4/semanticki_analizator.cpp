@@ -13,11 +13,12 @@
 
 using namespace std;
 
-int idn_broj = 1;
-
 vector <string> kod;
 
 int registri = 5;
+int vrhStoga = 40000;
+
+map<string, Node*> funkcije;
 
 class Node_svojstva{
     public:
@@ -49,6 +50,7 @@ class Node{
         Node_svojstva* svojstva = nullptr;
         Node* roditelj = nullptr;
         vector<Node*> djeca;
+        Tablica_Node* tablica = nullptr;
 
         Node(Node_svojstva* svojstva) : svojstva(svojstva){};
 
@@ -63,6 +65,8 @@ class Tablica_Node{
         map<string, Node*> zapis;
         Tablica_Node* roditelj = nullptr;
         vector<Tablica_Node*> djeca = {};
+
+        map<string, int> adresa_na_stogu;
 
         vector<Node*> deklarirane_funkcije = {};
         vector<Node*> definirane_funkcije = {};
@@ -256,6 +260,7 @@ int spremi_komtekst(Node* node){
     if(registri < 5){
         for(int i = registri+1; i <= 5; i++){
             kod.push_back("\tPUSH R" + to_string(i));
+            vrhStoga -= 4;
             j++;
         }
         registri = 5;
@@ -267,6 +272,7 @@ int spremi_komtekst(Node* node){
 void obnovi_komtekst(int broj){
     for(; broj > 0; broj--){
         kod.push_back("\tPOP R" + to_string(registri-broj+1));
+        vrhStoga += 4;
     }
 }
 
@@ -462,9 +468,18 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
     node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<lista_argumenata>"
     && node->djeca[3]->svojstva->znak == "D_ZAGRADA"){
         postfiks_izraz(node->djeca[0], tablica_node);
-        lista_argumenata(node->djeca[2], tablica_node);
         int i = spremi_komtekst(node);
+        lista_argumenata(node->djeca[2], tablica_node);
+        for(auto zapis : funkcije[node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka]->tablica->zapis){
+            if(zapis.second->svojstva->jeParametar){
+                funkcije[node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka]->tablica->adresa_na_stogu[zapis.first] = vrhStoga;
+                vrhStoga -= 4;
+            }
+        }
         kod.push_back("\tCALL F_" + node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka);
+        int j = node->djeca[0]->svojstva->argumenti.size();
+        kod.push_back("\tADD R7, " + to_string(j*4) + ", R7"); //micemo argumente sa stoga
+        vrhStoga += j*4;
         obnovi_komtekst(i);
         if(node->djeca[0]->svojstva->tip.substr(0, 8) != "funkcija"){
             greska(node);
@@ -509,6 +524,9 @@ void lista_argumenata(Node* node, Tablica_Node* tablica_node){
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izraz_pridruzivanja>"){
         izraz_pridruzivanja(node->djeca[0], tablica_node);
         node->svojstva->argumenti.push_back(node->djeca[0]->svojstva->tip);
+        kod.push_back("\tPUSH R6");
+        vrhStoga -= 4;
+        registri = 5;
     }
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<lista_argumenata>"
     && node->djeca[1]->svojstva->znak == "ZAREZ" && node->djeca[2]->svojstva->znak == "<izraz_pridruzivanja>"){
@@ -516,6 +534,9 @@ void lista_argumenata(Node* node, Tablica_Node* tablica_node){
         izraz_pridruzivanja(node->djeca[2], tablica_node);
         node->svojstva->argumenti = node->djeca[0]->svojstva->argumenti;
         node->svojstva->argumenti.push_back(node->djeca[2]->svojstva->tip);
+        kod.push_back("\tPUSH R6");
+        vrhStoga -= 4;
+        registri = 5;
     }
     else{
         greska(node);
@@ -988,6 +1009,7 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
             } 
         }
         string s = "\tADD R7, " + to_string(i*4) + ", R7";
+        vrhStoga += i*4;
         kod.push_back(s);
         if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
             kod.push_back("\tRET");
@@ -1214,6 +1236,7 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
     && node->djeca[3]->svojstva->znak == "KR_VOID" && node->djeca[4]->svojstva->znak == "D_ZAGRADA"
     && node->djeca[5]->svojstva->znak == "<slozena_naredba>"){
         kod.push_back("F_" + node->djeca[1]->svojstva->leks_jedinka);
+        funkcije[node->djeca[1]->svojstva->leks_jedinka] = node;
         ime_tipa(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->konst){
             greska(node);
@@ -1657,8 +1680,6 @@ Node* parsiraj(string filename) {
         line = line.substr(level);
 
         Node* node = new Node();
-        node->identifikator = idn_broj;
-        idn_broj++;
         if(root == nullptr){
             root = node;
         }
