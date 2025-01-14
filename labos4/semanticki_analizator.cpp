@@ -11,7 +11,6 @@
 #include <sstream>
 #include <stack>
 
-
 using namespace std;
 
 int idn_broj = 1;
@@ -71,6 +70,7 @@ class Tablica_Node{
         Tablica_Node(Tablica_Node* roditelj = nullptr) : roditelj(roditelj) {}
 };
 
+
 //---------------------------
 //#gl
 bool isGlobal = false;
@@ -81,6 +81,7 @@ bool aktivnaNaredbaSkoka = false;
 map <string, string> adresa; // tako da znam gdje je na stogu koja varijabla
 
 //---------------------------
+
 
 
 vector<string> split(const string& str, const string& delimiter) {
@@ -263,6 +264,26 @@ Node* provjeri_definicije(Tablica_Node* tablica, string ime){
     return nullptr;
 }
 
+
+int spremi_komtekst(Node* node){
+    int j = 0;
+    if(registri < 5){
+        for(int i = registri+1; i <= 5; i++){
+            kod.push_back("\tPUSH R" + to_string(i));
+            j++;
+        }
+        registri = 5;
+    }
+    return j;
+}
+
+
+void obnovi_komtekst(int broj){
+    for(; broj > 0; broj--){
+        kod.push_back("\tPOP R" + to_string(registri-broj+1));
+    }
+}
+
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
 
@@ -333,6 +354,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             	kod.push_back(s);            	
 			}
             //----------------------------------------------------------------------
+
         }
         else if(node->djeca[0]->svojstva->znak == "BROJ"){ //ako je dijete BROJ
             string broj_str = node->djeca[0]->svojstva->leks_jedinka;
@@ -355,15 +377,13 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             else if(!(broj <= INT_MAX && broj >= INT_MIN)){
                 greska(node);
             }
-            
             node->svojstva->tip = "int";
             node->svojstva->l_izraz = false;
 
             node->djeca[0]->svojstva->tip = "int";
             node->djeca[0]->svojstva->l_izraz = false;
-            
-            
-            // -----------------------------------------------------------------------
+
+                // -----------------------------------------------------------------------
 			
 			if (aktivnaDeklaracija) { // Kao došli smo do broja tokom deklaracije
             	if (isGlobal) { // Definicija globalne varijable, trazi #gl
@@ -384,6 +404,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             registri--;
             kod.push_back(s);
             }
+ 
         }
         else if(node->djeca[0]->svojstva->znak == "ZNAK"){ //ako je dijete ZNAK
             if(provjeri_znak(node->djeca[0]->svojstva->leks_jedinka)){ //ako je ispravan znak, postavi svojstva
@@ -458,6 +479,9 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<postfiks_izraz>" 
     && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "D_ZAGRADA"){
         postfiks_izraz(node->djeca[0], tablica_node);
+        int i = spremi_komtekst(node);
+        kod.push_back("\tCALL F_" + node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka);
+        obnovi_komtekst(i);
         if(node->djeca[0]->svojstva->tip.substr(0, 8) != "funkcija"){
             greska(node);
         }
@@ -478,6 +502,9 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
     && node->djeca[3]->svojstva->znak == "D_ZAGRADA"){
         postfiks_izraz(node->djeca[0], tablica_node);
         lista_argumenata(node->djeca[2], tablica_node);
+        int i = spremi_komtekst(node);
+        kod.push_back("\tCALL F_" + node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka);
+        obnovi_komtekst(i);
         if(node->djeca[0]->svojstva->tip.substr(0, 8) != "funkcija"){
             greska(node);
         }
@@ -999,10 +1026,6 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
                 i++;
             } 
         }
-        if (aktivnaNaredbaSkoka) { // Ako smo dosli do izraza u aktivnoj naredbi skoka mora biti da je return;
-            	
-	    }
-        
         string s = "\tADD R7, " + to_string(i*4) + ", R7";
         kod.push_back(s);
         if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
@@ -1053,7 +1076,7 @@ void naredba(Node* node, Tablica_Node* tablica_node){
     }
 
     else if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<naredba_skoka>"){
-		naredba_skoka(node->djeca[0], tablica_node);
+        naredba_skoka(node->djeca[0], tablica_node);
     }
 
     else{
@@ -1155,7 +1178,7 @@ void naredba_petlje(Node* node, Tablica_Node* tablica_node){
 void naredba_skoka(Node* node, Tablica_Node* tablica_node){
     if(node->svojstva == nullptr) greska(node);
     
-    aktivnaNaredbaSkoka = true;
+    aktivnaNaredbaSkoka = true; //#ret
 
     if(node->djeca.size() == 2 && (node->djeca[0]->svojstva->znak == "KR_CONTINUE" 
     || node->djeca[0]->svojstva->znak == "KR_BREAK")
@@ -1394,7 +1417,6 @@ void deklaracija(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "<lista_init_deklaratora>" && node->djeca[2]->svojstva->znak == "TOCKAZAREZ"){
         ime_tipa(node->djeca[0], tablica_node);
         node->djeca[1]->svojstva->ntip = node->djeca[0]->svojstva->tip;
-        
         // -----------------------------------------------------------------------
         aktivnaDeklaracija = true;
         
@@ -1403,7 +1425,6 @@ void deklaracija(Node* node, Tablica_Node* tablica_node){
         }
         else isGlobal = false;
         // -----------------------------------------------------------------------        
-        
         lista_init_deklaratora(node->djeca[1], tablica_node);
     }
 
@@ -1783,3 +1804,8 @@ int main(void){
     
     return 0;
 }
+
+            
+
+
+
