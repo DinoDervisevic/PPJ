@@ -368,11 +368,20 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
 
             // idemo spremiti varijablu u R6 i neki registar
             if(node->djeca[0]->svojstva->tip.substr(0, 8) != "funkcija"){
-                string s = "\tLOAD R6, (R7+" + to_string((tablica_node->adresa_na_stogu.size())*4 - tablica_node->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka]) + ")";
-                kod.push_back(s);
-                string z = "\tLOAD R" + to_string(registri) + ", (R7+" + to_string((tablica_node->adresa_na_stogu.size())*4 - tablica_node->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka]) + ")";
-                registri--;
-                kod.push_back(z);
+                if(adresa.find(node->djeca[0]->svojstva->leks_jedinka) != adresa.end()){
+                    string s = "\tLOAD R6, (" + adresa[node->djeca[0]->svojstva->leks_jedinka] + ")";
+                    kod.push_back(s);
+                    string z = "\tLOAD R" + to_string(registri) + ", (" + adresa[node->djeca[0]->svojstva->leks_jedinka] + ")";
+                    registri--;
+                    kod.push_back(z);
+                }
+                else{
+                    string s = "\tLOAD R6, (R7+" + to_string((tablica_node->adresa_na_stogu.size())*4 - tablica_node->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka]) + ")";
+                    kod.push_back(s);
+                    string z = "\tLOAD R" + to_string(registri) + ", (R7+" + to_string((tablica_node->adresa_na_stogu.size())*4 - tablica_node->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka]) + ")";
+                    registri--;
+                    kod.push_back(z);
+                }   
             }
         }
         else if(node->djeca[0]->svojstva->znak == "BROJ"){ //ako je dijete BROJ
