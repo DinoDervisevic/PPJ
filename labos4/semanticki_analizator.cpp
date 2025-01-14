@@ -378,17 +378,17 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                     if(trenutna_tablica->roditelj == nullptr){
                         string s = "\tLOAD R6, (" + adresa[node->djeca[0]->svojstva->leks_jedinka] + ")";
                         kod.push_back(s);
-                        string z = "\tLOAD R" + to_string(registri) + ", (" + adresa[node->djeca[0]->svojstva->leks_jedinka] + ")";
-                        registri--;
-                        kod.push_back(z);
+                        //string z = "\tLOAD R" + to_string(registri) + ", (" + adresa[node->djeca[0]->svojstva->leks_jedinka] + ")";
+                        //registri--;
+                        //kod.push_back(z);
                         break;
                     }
                     if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
                         string s = "\tLOAD R6, (R7+" + to_string(i*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka]) + ")";
                         kod.push_back(s);
-                        string z = "\tLOAD R" + to_string(registri) + ", (R7+" + to_string(i*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka]) + ")";
-                        registri--;
-                        kod.push_back(z);
+                        //string z = "\tLOAD R" + to_string(registri) + ", (R7+" + to_string(i*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka]) + ")";
+                        //registri--;
+                        //kod.push_back(z);
                         break;
                     }
                     trenutna_tablica = trenutna_tablica->roditelj;
@@ -444,9 +444,10 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
 				    
 					kod.push_back(s);
 					
-					s = "\tLOAD R" + to_string(registri) + ", (G_" + to_string(brojacVelikihBrojeva) +")";
-		            kod.push_back(s);
-		            s = "\tLOAD R6, (G_" + to_string(brojacVelikihBrojeva) +")";
+				//	s = "\tLOAD R" + to_string(registri) + ", (G_" + to_string(brojacVelikihBrojeva) +")";
+		        //  kod.push_back(s);
+		            
+					s = "\tLOAD R6, (G_" + to_string(brojacVelikihBrojeva) +")";
 		            kod.push_back(s);
 		            
 		            registri--;
@@ -454,9 +455,9 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
 				} else {
 					string s = "\tMOVE %D " + broj_str + ", R6";
 		            kod.push_back(s);
-		            s = "\tMOVE %D " + broj_str + ", R" + to_string(registri);
-		            registri--;
-		            kod.push_back(s);
+		            //s = "\tMOVE %D " + broj_str + ", R" + to_string(registri);
+		            //registri--;
+		            //kod.push_back(s);
             	}
 			}
         }
@@ -782,16 +783,46 @@ void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<multiplikativni_izraz>"){
         multiplikativni_izraz(node->djeca[0], tablica_node);
-        node->svojstva->tip = node->djeca[0]->svojstva->tip;
+        //------------------------------------------------------------------
+		string s;
+		s = "\tMOVE R6, R" + to_string(registri); //sta god da je na R6
+		kod.push_back(s);
+		//------------------------------------------------------------------
+		node->svojstva->tip = node->djeca[0]->svojstva->tip;
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<aditivni_izraz>" 
     && (node->djeca[1]->svojstva->znak == "PLUS" || node->djeca[1]->svojstva->znak == "MINUS")
     && node->djeca[2]->svojstva->znak == "<multiplikativni_izraz>"){
-        aditivni_izraz(node->djeca[0], tablica_node);
-        multiplikativni_izraz(node->djeca[2], tablica_node);
-        if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
+          		
+		aditivni_izraz(node->djeca[0], tablica_node);
+
+        
+        multiplikativni_izraz(node->djeca[2], tablica_node); // recentMultiplikativniIzraz trebao bi biti u R6 jer je sve u R6
+        //------------------------------------------------------------------
+        // basically nadodaj Multiplikativni u R5 i spremi u R6
+        // rezultat funkcije je u R6
+        
+        string s;
+        
+		if (node->djeca[1]->svojstva->znak == "PLUS") { // dodaj multiplikativni izraz koji je izracunat u registru R6
+		 
+			s = "\tADD R" + to_string(registri) + ", R6" + ", R" +to_string(registri); // sta god da se izracunalo stavi u R5 da R6 bude slobodan ako dode funkcija
+	        kod.push_back(s);
+	        s = "\tMOVE R" + to_string(registri) + ", R6";
+	        kod.push_back(s);   
+    	}
+    	else { // mora da je MINUS
+    		s = "\tSUB R" + to_string(registri) + ", R6" + ", R" +to_string(registri); // sta god da se izracunalo stavi u R5 da R6 bude slobodan ako dode funkcija
+	        kod.push_back(s);
+	        s = "\tMOVE R" + to_string(registri) + ", R6";
+	        kod.push_back(s);
+		}
+		
+        //------------------------------------------------------------------        
+        
+		if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             //cout << node->djeca[0]->svojstva->tip << " " << node->djeca[2]->svojstva->tip << endl;
             greska(node);
         }
@@ -1864,13 +1895,10 @@ int main(void){
     kod.push_back("\tCALL F_main");
     kod.push_back("\tHALT");
 
-        root = parsiraj("ulaz.txt");
-        prijevodna_jedinica(root, tablica_node);
-
+    root = parsiraj("ulaz.txt");
+    prijevodna_jedinica(root, tablica_node);
 
     ispisi_kod();
-
-    
     return 0;
 }
 
