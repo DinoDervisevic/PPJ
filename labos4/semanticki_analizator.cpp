@@ -1284,7 +1284,7 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
                 j++;
             } 
         }
-        string s = "\tADD R7, " + to_string(j*4) + ", R7";
+        string s = "\tADD R7, " + pretvori_u_heksadekadski(j*4) + ", R7";
         vrhStoga += i*4;
         kod.push_back(s);
         if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
