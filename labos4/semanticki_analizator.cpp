@@ -69,6 +69,7 @@ class Tablica_Node{
         vector<Tablica_Node*> djeca = {};
 
         map<string, int> adresa_na_stogu;
+        int relativni_vrh = 0;
 
         vector<Node*> deklarirane_funkcije = {};
         vector<Node*> definirane_funkcije = {};
@@ -386,7 +387,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                         break;
                     }
                     if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
-                        string s = "\tLOAD R6, (R7+" + to_string(i*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka]) + ")";
+                        string s = "\tLOAD R6, (R7+" + to_string((i-1)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka]) + ")";
                         kod.push_back(s);
                         //string z = "\tLOAD R" + to_string(registri) + ", (R7+" + to_string(i*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka]) + ")";
                         //registri--;
@@ -426,16 +427,14 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
 
             // -----------------------------------------------------------------------
 			
-			if (aktivnaDeklaracija) { // Kao do�li smo do broja tokom deklaracije
-            	if (isGlobal) { // Definicija globalne varijable, trazi #gl
-            	
+			if (aktivnaDeklaracija && isGlobal) { // Kao do�li smo do broja tokom deklaracije
+                                                // Definicija globalne varijable, trazi #gl
             	    string identifikator = trenutniIzravniDeklarator->djeca[0]->svojstva->leks_jedinka;
             	    
             		string s = "G_" + identifikator + "\tDW %D " + broj_str;
             		kod.push_back(s);
             		
             		adresa[identifikator] = "G_" + identifikator; //#ret
-				}
 			} else {
             // -----------------------------------------------------------------------
         		if ( stoi(broj_str) > 79999 ) {
@@ -1197,6 +1196,10 @@ void izraz(Node* node, Tablica_Node* tablica_node){
 void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     if(node->svojstva == nullptr) greska(node);
 
+    Tablica_Node* nova_tablica = new Tablica_Node();
+    nova_tablica->roditelj = tablica_node;
+    tablica_node->djeca.push_back(nova_tablica);
+
     int i = 0;
     if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
         if(node->roditelj->djeca[3]->svojstva->znak == "<lista_parametara>"){
@@ -1205,8 +1208,9 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
                 parametar->svojstva->tip = node->roditelj->djeca[3]->svojstva->argumenti[i];
                 parametar->svojstva->leks_jedinka = node->roditelj->djeca[3]->svojstva->argumenti_imena[i];
                 parametar->svojstva->jeParametar = true;
-                tablica_node->zapis[parametar->svojstva->leks_jedinka] = parametar;
-                tablica_node->adresa_na_stogu[parametar->svojstva->leks_jedinka] = i*4;
+                nova_tablica->zapis[parametar->svojstva->leks_jedinka] = parametar;
+                nova_tablica->adresa_na_stogu[parametar->svojstva->leks_jedinka] = i*4;
+                nova_tablica->relativni_vrh += 4;
             }
         }
     }
@@ -1214,7 +1218,7 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
 
     if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
     && node->djeca[1]->svojstva->znak == "<lista_naredbi>" && node->djeca[2]->svojstva->znak == "D_VIT_ZAGRADA"){
-        lista_naredbi(node->djeca[1], tablica_node);
+        lista_naredbi(node->djeca[1], nova_tablica);
         if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
             kod.push_back("\tRET");
         }
@@ -1223,16 +1227,17 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     else if(node->djeca.size() == 4 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
     && node->djeca[1]->svojstva->znak == "<lista_deklaracija>" && node->djeca[2]->svojstva->znak == "<lista_naredbi>"
     && node->djeca[3]->svojstva->znak == "D_VIT_ZAGRADA"){
-        lista_deklaracija(node->djeca[1], tablica_node);
-        lista_naredbi(node->djeca[2], tablica_node);
+        lista_deklaracija(node->djeca[1], nova_tablica);
+        lista_naredbi(node->djeca[2], nova_tablica);
         int j = 0;
-        for(auto node : tablica_node->zapis){
+        if(node->roditelj->svojstva->znak == "<definicija_funkcije>") nova_tablica->adresa_na_stogu["callback funkcije"] = i*4;
+        nova_tablica->relativni_vrh += 4;
+        for(auto node : nova_tablica->zapis){
             if(!node.second->svojstva->jeParametar){
-                tablica_node->adresa_na_stogu[node.first] = i*4 + j*4;
                 j++;
             } 
         }
-        string s = "\tSUB R7, " + to_string(j*4) + ", R7";
+        string s = "\tADD R7, " + to_string(j*4) + ", R7";
         vrhStoga += i*4;
         kod.push_back(s);
         if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
@@ -1457,16 +1462,12 @@ void vanjska_deklaracija(Node* node, Tablica_Node* tablica_node){
 void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
     if(node->svojstva == nullptr) greska(node);
 
-    Tablica_Node* nova_tablica = new Tablica_Node(tablica_node);
-    tablica_node->djeca.push_back(nova_tablica);
-
     if(node->djeca.size() == 6 && node->djeca[0]->svojstva->znak == "<ime_tipa>" 
     && node->djeca[1]->svojstva->znak == "IDN" && node->djeca[2]->svojstva->znak == "L_ZAGRADA"
     && node->djeca[3]->svojstva->znak == "KR_VOID" && node->djeca[4]->svojstva->znak == "D_ZAGRADA"
     && node->djeca[5]->svojstva->znak == "<slozena_naredba>"){
         kod.push_back("F_" + node->djeca[1]->svojstva->leks_jedinka);
         funkcije[node->djeca[1]->svojstva->leks_jedinka] = node;
-        node->tablica = nova_tablica;
         ime_tipa(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->konst){
             greska(node);
@@ -1494,7 +1495,7 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
         node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
         tablica_node->zapis.insert({node->djeca[1]->svojstva->leks_jedinka, node});
         tablica_node->definirane_funkcije.push_back(node);  
-        slozena_naredba(node->djeca[5], nova_tablica);
+        slozena_naredba(node->djeca[5], tablica_node);
         node->svojstva->fja_definirana = true;
     }
 
@@ -1504,7 +1505,6 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
     && node->djeca[5]->svojstva->znak == "<slozena_naredba>"){
         kod.push_back("F_" + node->djeca[1]->svojstva->leks_jedinka);
         funkcije[node->djeca[1]->svojstva->leks_jedinka] = node;
-        node->tablica = nova_tablica;
         ime_tipa(node->djeca[0], tablica_node);
         if(node->djeca[0]->svojstva->konst){
             greska(node);
@@ -1540,7 +1540,7 @@ void definicija_funkcije(Node* node, Tablica_Node* tablica_node){
         node->svojstva->leks_jedinka = node->djeca[1]->svojstva->leks_jedinka;
         tablica_node->zapis.insert({node->djeca[1]->svojstva->leks_jedinka, node});
         tablica_node->definirane_funkcije.push_back(node); 
-        slozena_naredba(node->djeca[5], nova_tablica);
+        slozena_naredba(node->djeca[5], tablica_node);
         node->svojstva->fja_definirana = true;
     }
     else{
@@ -1671,9 +1671,23 @@ void lista_init_deklaratora(Node* node, Tablica_Node* tablica_node){
 void init_deklarator(Node* node, Tablica_Node* tablica_node){
     if(node->svojstva == nullptr) greska(node);
 
+    if(tablica_node->adresa_na_stogu.find("callback funkcije") == tablica_node->adresa_na_stogu.end()){
+        tablica_node->adresa_na_stogu["callback funkcije"] = 0;
+    }
+    int i = tablica_node->adresa_na_stogu["callback funkcije"]+1;
+    string s;
+
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izravni_deklarator>"){
         node->djeca[0]->svojstva->ntip = node->svojstva->ntip;
         izravni_deklarator(node->djeca[0], tablica_node);
+
+        if(node->djeca[0]->djeca.size() == 1 && node->djeca[0]->djeca[0]->svojstva->znak == "IDN"){
+            s = "\tSUB R7, 4, R7";
+            kod.push_back(s);
+            tablica_node->adresa_na_stogu[node->djeca[0]->djeca[0]->svojstva->leks_jedinka] = i*4;
+            tablica_node->relativni_vrh += 4;
+            ++i;
+        }
 
         if(node->djeca[0]->svojstva->konst){
             greska(node);
@@ -1685,6 +1699,14 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
         node->djeca[0]->svojstva->ntip = node->svojstva->ntip;
         izravni_deklarator(node->djeca[0], tablica_node);
         inicijalizator(node->djeca[2], tablica_node);
+
+        if(node->djeca[0]->djeca.size() == 1 && node->djeca[0]->djeca[0]->svojstva->znak == "IDN" && !isGlobal){
+            s = "\tPUSH R6";
+            kod.push_back(s);
+            tablica_node->adresa_na_stogu[node->djeca[0]->djeca[0]->svojstva->leks_jedinka] = i*4;
+            tablica_node->relativni_vrh += 4;
+            ++i;
+        }
 
         Node* provjera = jel_ide_u_identifikator(node->djeca[2]);
         if(provjera != nullptr && provjera->svojstva->tip.find("niz(") != string::npos){
