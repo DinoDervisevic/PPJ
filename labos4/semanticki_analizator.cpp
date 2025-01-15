@@ -781,24 +781,35 @@ void multiplikativni_izraz(Node* node, Tablica_Node* tablica_node){
 void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
     if(node->svojstva == nullptr) greska(node);
 
-    if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<multiplikativni_izraz>"){
-        multiplikativni_izraz(node->djeca[0], tablica_node);
-        //------------------------------------------------------------------
-		string s;
-		s = "\tMOVE R6, R" + to_string(registri); //sta god da je na R6
-		kod.push_back(s);
-		//------------------------------------------------------------------
-		node->svojstva->tip = node->djeca[0]->svojstva->tip;
-        node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
-    }
+    if (node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<multiplikativni_izraz>") {
+    
+	    multiplikativni_izraz(node->djeca[0], tablica_node);
+	
+	    // Postavi svojstva trenutnog èvora
+	    node->svojstva->tip = node->djeca[0]->svojstva->tip;
+	    node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
+	
+		//---------------------------------------
+	    // Generiranje koda samo za prvi operand
+        if (node->roditelj != nullptr && 
+            node->roditelj->svojstva->znak == "<aditivni_izraz>" &&
+            node->roditelj->djeca[0] == node) {
+            string s = "\tMOVE R6, R5";
+            kod.push_back(s);
+        }
+		//---------------------------------------
+	}
+
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<aditivni_izraz>" 
     && (node->djeca[1]->svojstva->znak == "PLUS" || node->djeca[1]->svojstva->znak == "MINUS")
     && node->djeca[2]->svojstva->znak == "<multiplikativni_izraz>"){
-          		
+          
+		  		
 		aditivni_izraz(node->djeca[0], tablica_node);
-
         
+        
+
         multiplikativni_izraz(node->djeca[2], tablica_node); // recentMultiplikativniIzraz trebao bi biti u R6 jer je sve u R6
         //------------------------------------------------------------------
         // basically nadodaj Multiplikativni u R5 i spremi u R6
@@ -902,19 +913,39 @@ void bin_i_izraz(Node* node, Tablica_Node* tablica_node){
         jednakosni_izraz(node->djeca[0], tablica_node);
         node->svojstva->tip = node->djeca[0]->svojstva->tip;
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
+        
+    
+    	//----------------------------------
+    	// Generiranje koda za prvi operand
+        string s = "\tMOVE R6, R" + to_string(registri);
+        kod.push_back(s);
+    	//----------------------------------
+
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_i_izraz>" 
     && node->djeca[1]->svojstva->znak == "OP_BIN_I" && node->djeca[2]->svojstva->znak == "<jednakosni_izraz>"){
         bin_i_izraz(node->djeca[0], tablica_node);
+        
         jednakosni_izraz(node->djeca[2], tablica_node);
-        if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
+        
+		if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
         }
         else{
             node->svojstva->tip = "int";
             node->svojstva->l_izraz = false;
         }
+        
+        
+        //------------------------------------------------------------------
+        string s;
+        
+		s = "\tAND R" + to_string(registri) + ", R6" + ", R" +to_string(registri); 
+        kod.push_back(s);
+        s = "\tMOVE R" + to_string(registri) + ", R6";
+        kod.push_back(s);   		
+        //------------------------------------------------------------------
     }
 
     else{
@@ -929,6 +960,13 @@ void bin_xili_izraz(Node* node, Tablica_Node* tablica_node){
         bin_i_izraz(node->djeca[0], tablica_node);
         node->svojstva->tip = node->djeca[0]->svojstva->tip;
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
+                
+    	//----------------------------------
+    	// Generiranje koda za prvi operand
+        string s = "\tMOVE R6, R" + to_string(registri);
+        kod.push_back(s);
+    	//----------------------------------
+
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_xili_izraz>" 
@@ -942,6 +980,15 @@ void bin_xili_izraz(Node* node, Tablica_Node* tablica_node){
             node->svojstva->tip = "int";
             node->svojstva->l_izraz = false;
         }
+        
+        //------------------------------------------------------------------
+        string s;
+        
+		s = "\tXOR R" + to_string(registri) + ", R6" + ", R" +to_string(registri); 
+        kod.push_back(s);
+        s = "\tMOVE R" + to_string(registri) + ", R6";
+        kod.push_back(s);   		
+        //------------------------------------------------------------------
     }
 
     else{
@@ -957,6 +1004,13 @@ void bin_ili_izraz(Node* node, Tablica_Node* tablica_node){
         bin_xili_izraz(node->djeca[0], tablica_node);
         node->svojstva->tip = node->djeca[0]->svojstva->tip;
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
+    
+    	//----------------------------------
+    	// Generiranje koda za prvi operand
+        string s = "\tMOVE R6, R" + to_string(registri);
+        kod.push_back(s);
+    	//----------------------------------
+
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_ili_izraz>" 
@@ -970,6 +1024,15 @@ void bin_ili_izraz(Node* node, Tablica_Node* tablica_node){
             node->svojstva->tip = "int";
             node->svojstva->l_izraz = false;
         }
+        
+    	//------------------------------------------------------------------
+        string s;
+        
+		s = "\tOR R" + to_string(registri) + ", R6" + ", R" +to_string(registri); 
+        kod.push_back(s);
+        s = "\tMOVE R" + to_string(registri) + ", R6";
+        kod.push_back(s);   		
+        //------------------------------------------------------------------
     }
 
     else{
