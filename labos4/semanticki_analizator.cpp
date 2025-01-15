@@ -402,9 +402,6 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                         string s;
                         int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
                         //cout << trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] << endl;
-                        if(true){
-                            pozicija -= 4;
-                        }
                         if(pozicija < 0){
                             s = "\tLOAD R6, (R7" + pretvori_u_heksadekadski(pozicija) + ")";
                         }
@@ -1270,10 +1267,12 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
                 parametar->svojstva->leks_jedinka = node->roditelj->djeca[3]->svojstva->argumenti_imena[i];
                 parametar->svojstva->jeParametar = true;
                 nova_tablica->zapis[parametar->svojstva->leks_jedinka] = parametar;
-                nova_tablica->adresa_na_stogu[parametar->svojstva->leks_jedinka] = i*4;
                 nova_tablica->relativni_vrh += 4;
+                nova_tablica->adresa_na_stogu[parametar->svojstva->leks_jedinka] = nova_tablica->relativni_vrh;
             }
         }
+        nova_tablica->relativni_vrh += 4;
+        nova_tablica->adresa_na_stogu["callback funkcije"] = nova_tablica->relativni_vrh ;
     }
     i+=1;
 
@@ -1289,10 +1288,6 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "<lista_deklaracija>" && node->djeca[2]->svojstva->znak == "<lista_naredbi>"
     && node->djeca[3]->svojstva->znak == "D_VIT_ZAGRADA"){
         int j = 0;
-        if(node->roditelj->svojstva->znak == "<definicija_funkcije>") {
-            nova_tablica->adresa_na_stogu["callback funkcije"] = i*4;
-            nova_tablica->relativni_vrh += 4;
-        }
         lista_deklaracija(node->djeca[1], nova_tablica);
         lista_naredbi(node->djeca[2], nova_tablica);
         
@@ -1749,8 +1744,8 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
         if(node->djeca[0]->djeca.size() == 1 && node->djeca[0]->djeca[0]->svojstva->znak == "IDN"){
             s = "\tSUB R7, 4, R7";
             kod.push_back(s);
-            tablica_node->adresa_na_stogu[node->djeca[0]->djeca[0]->svojstva->leks_jedinka] = tablica_node->relativni_vrh;
             tablica_node->relativni_vrh += 4;
+            tablica_node->adresa_na_stogu[node->djeca[0]->djeca[0]->svojstva->leks_jedinka] = tablica_node->relativni_vrh;
             ++i;
         }
 
@@ -1768,9 +1763,9 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
         if(node->djeca[0]->djeca.size() == 1 && node->djeca[0]->djeca[0]->svojstva->znak == "IDN" && !isGlobal){
             s = "\tPUSH R6";
             kod.push_back(s);
+            tablica_node->relativni_vrh += 4;
             tablica_node->adresa_na_stogu[node->djeca[0]->djeca[0]->svojstva->leks_jedinka] = tablica_node->relativni_vrh;
             cout << node->djeca[0]->djeca[0]->svojstva->leks_jedinka << " " << tablica_node->relativni_vrh << endl;
-            tablica_node->relativni_vrh += 4;
             ++i;
         }
 
