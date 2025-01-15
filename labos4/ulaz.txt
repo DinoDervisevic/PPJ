@@ -26,7 +26,11 @@
                    <unarni_izraz>
                     <postfiks_izraz>
                      <primarni_izraz>
+<<<<<<< HEAD
                       BROJ 1 12
+=======
+                      BROJ 1 15
+>>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
      TOCKAZAREZ 1 ;
   <vanjska_deklaracija>
    <deklaracija>
@@ -53,7 +57,7 @@
                   <unarni_izraz>
                    <postfiks_izraz>
                     <primarni_izraz>
-                     BROJ 2 65
+                     BROJ 2 16
     TOCKAZAREZ 2 ;
  <vanjska_deklaracija>
   <definicija_funkcije>
@@ -77,9 +81,15 @@
            <bin_ili_izraz>
             <bin_xili_izraz>
              <bin_i_izraz>
+<<<<<<< HEAD
               <bin_i_izraz>
                <jednakosni_izraz>
                 <odnosni_izraz>
+=======
+              <jednakosni_izraz>
+               <odnosni_izraz>
+                <aditivni_izraz>
+>>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
                  <aditivni_izraz>
                   <multiplikativni_izraz>
                    <cast_izraz>
@@ -87,10 +97,14 @@
                      <postfiks_izraz>
                       <primarni_izraz>
                        IDN 4 x
+<<<<<<< HEAD
               OP_BIN_I 4 &
               <jednakosni_izraz>
                <odnosni_izraz>
                 <aditivni_izraz>
+=======
+                 PLUS 4 +
+>>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
                  <multiplikativni_izraz>
                   <cast_izraz>
                    <unarni_izraz>

@@ -920,11 +920,22 @@ void bin_i_izraz(Node* node, Tablica_Node* tablica_node){
         
     /*
     	//----------------------------------
+<<<<<<< HEAD
     	// Generiranje koda za prvi operand
         string s = "\tMOVE R6, R" + to_string(registri);
         kod.push_back(s);
     	//----------------------------------
     */
+=======
+    	if (node->roditelj != nullptr && 
+            node->roditelj->svojstva->znak == "<bin_i_izraz>" &&
+            node->roditelj->djeca[0] == node) {
+            string s = "\tMOVE R6, R5";
+            kod.push_back(s);
+        }
+		//----------------------------------
+
+>>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_i_izraz>" 
@@ -1005,11 +1016,21 @@ void bin_xili_izraz(Node* node, Tablica_Node* tablica_node){
 
         /*  
     	//----------------------------------
+<<<<<<< HEAD
     	// Generiranje koda za prvi operand
         string s = "\tMOVE R6, R" + to_string(registri);
         kod.push_back(s);
     	//----------------------------------
     	*/
+=======
+    	if (node->roditelj != nullptr && 
+            node->roditelj->svojstva->znak == "<bin_xili_izraz>" &&
+            node->roditelj->djeca[0] == node) {
+            string s = "\tMOVE R6, R5";
+            kod.push_back(s);
+        }//----------------------------------
+
+>>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_xili_izraz>" 
@@ -1050,11 +1071,21 @@ void bin_ili_izraz(Node* node, Tablica_Node* tablica_node){
     
     /*
     	//----------------------------------
+<<<<<<< HEAD
     	// Generiranje koda za prvi operand
         string s = "\tMOVE R6, R" + to_string(registri);
         kod.push_back(s);
     	//----------------------------------
     */
+=======
+    	if (node->roditelj != nullptr && 
+            node->roditelj->svojstva->znak == "<bin_ili_izraz>" &&
+            node->roditelj->djeca[0] == node) {
+            string s = "\tMOVE R6, R5";
+            kod.push_back(s);
+        }//----------------------------------
+
+>>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_ili_izraz>" 
