@@ -480,6 +480,34 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             } else {
                 greska(node);
             }
+            string broj_str = to_string((int)node->djeca[0]->svojstva->leks_jedinka[1]);
+            if (aktivnaDeklaracija && isGlobal) { // Kao do�li smo do broja tokom deklaracije
+                                                // Definicija globalne varijable, trazi #gl
+            	    string identifikator = trenutniIzravniDeklarator->djeca[0]->svojstva->leks_jedinka;
+            	    
+            		string s = "G_" + identifikator + "\tDW %D " + broj_str;
+            		kod.push_back(s);
+            		
+            		adresa[identifikator] = "G_" + identifikator; //#ret
+			} else {
+            // -----------------------------------------------------------------------
+        		if ( stoi(broj_str) > 79999 ) {
+        			brojacVelikihBrojeva ++;
+        			string s = "G_" + to_string(brojacVelikihBrojeva) + "\tDW %D " + broj_str;
+				    
+					adresa[to_string(brojacVelikihBrojeva)] = "G_" + to_string(brojacVelikihBrojeva); //#vb
+				    
+					kod.push_back(s);
+					s = "\tLOAD R6, (G_" + to_string(brojacVelikihBrojeva) +")";
+		            kod.push_back(s);
+		            
+		            registri--;
+		            
+				} else {
+					string s = "\tMOVE %D " + broj_str + ", R6";
+		            kod.push_back(s);
+            	}
+			}
         }
         else if(node->djeca[0]->svojstva->znak == "NIZ_ZNAKOVA"){ //ako je dijete NIZ_ZNAKOVA
             if(provjeri_niz_znakova(node->djeca[0]->svojstva->leks_jedinka)){ //ako je ispravan niz znakova, postavi svojstva
