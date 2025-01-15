@@ -920,22 +920,11 @@ void bin_i_izraz(Node* node, Tablica_Node* tablica_node){
         
     /*
     	//----------------------------------
-<<<<<<< HEAD
     	// Generiranje koda za prvi operand
         string s = "\tMOVE R6, R" + to_string(registri);
         kod.push_back(s);
     	//----------------------------------
     */
-=======
-    	if (node->roditelj != nullptr && 
-            node->roditelj->svojstva->znak == "<bin_i_izraz>" &&
-            node->roditelj->djeca[0] == node) {
-            string s = "\tMOVE R6, R5";
-            kod.push_back(s);
-        }
-		//----------------------------------
-
->>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_i_izraz>" 
@@ -958,28 +947,8 @@ void bin_i_izraz(Node* node, Tablica_Node* tablica_node){
         registri++;
 
 
-        s = "\tCMP R" + to_string(registri) + ", 0";
-        kod.push_back(s);
-        s = "\tJP_EQ ZERO_FOUND" + to_string(brojacLabela);
-        kod.push_back(s);
-
-        s = "\tCMP R" + to_string(registri-1) + ", 0";
-        kod.push_back(s);
-        s = "\tJP_EQ ZERO_FOUND" + to_string(brojacLabela);
-        kod.push_back(s);
-
-        s = "\tMOVE 1, R6";
-        kod.push_back(s);
-        s = "\tJP END_ZERO_FOUND" + to_string(brojacLabela);
-        kod.push_back(s);
-        s = "ZERO_FOUND" + to_string(brojacLabela);
-        kod.push_back(s);
-        s = "\tMOVE 0, R6";
-        kod.push_back(s);
-        s = "END_ZERO_FOUND" + to_string(brojacLabela);
-        kod.push_back(s);
-
-        brojacLabela++;
+        s = "\tAND R" + to_string(registri) + ", R" + to_string(registri-1) + ", R6"; // sta god da se izracunalo stavi u R5 da R6 bude slobodan ako dode funkcija
+	    kod.push_back(s); 
         
 		if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
@@ -1016,27 +985,33 @@ void bin_xili_izraz(Node* node, Tablica_Node* tablica_node){
 
         /*  
     	//----------------------------------
-<<<<<<< HEAD
     	// Generiranje koda za prvi operand
         string s = "\tMOVE R6, R" + to_string(registri);
         kod.push_back(s);
     	//----------------------------------
     	*/
-=======
-    	if (node->roditelj != nullptr && 
-            node->roditelj->svojstva->znak == "<bin_xili_izraz>" &&
-            node->roditelj->djeca[0] == node) {
-            string s = "\tMOVE R6, R5";
-            kod.push_back(s);
-        }//----------------------------------
-
->>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_xili_izraz>" 
     && node->djeca[1]->svojstva->znak == "OP_BIN_XILI" && node->djeca[2]->svojstva->znak == "<bin_i_izraz>"){
         bin_xili_izraz(node->djeca[0], tablica_node);
+
+        string s;
+        s = "\tMOVE R6, R" + to_string(registri);
+	    kod.push_back(s);   
+        s = "\tPUSH R" + to_string(registri);
+        kod.push_back(s);
+
         bin_i_izraz(node->djeca[2], tablica_node);
+
+        s = "\tPOP R" + to_string(registri);
+        registri--;
+	    kod.push_back(s);
+        s = "\tMOVE R6, R" + to_string(registri);
+        kod.push_back(s);
+        registri++;
+
+
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
         }
@@ -1046,12 +1021,8 @@ void bin_xili_izraz(Node* node, Tablica_Node* tablica_node){
         }
         
         //------------------------------------------------------------------
-        string s;
-        
-		s = "\tXOR R" + to_string(registri) + ", R6" + ", R" +to_string(registri); 
-        kod.push_back(s);
-        s = "\tMOVE R" + to_string(registri) + ", R6";
-        kod.push_back(s);   		
+		s = "\tXOR R" + to_string(registri) + ", R" + to_string(registri-1) + ", R6"; // sta god da se izracunalo stavi u R5 da R6 bude slobodan ako dode funkcija
+	    kod.push_back(s);   		
         //------------------------------------------------------------------
     }
 
@@ -1071,27 +1042,32 @@ void bin_ili_izraz(Node* node, Tablica_Node* tablica_node){
     
     /*
     	//----------------------------------
-<<<<<<< HEAD
     	// Generiranje koda za prvi operand
         string s = "\tMOVE R6, R" + to_string(registri);
         kod.push_back(s);
     	//----------------------------------
     */
-=======
-    	if (node->roditelj != nullptr && 
-            node->roditelj->svojstva->znak == "<bin_ili_izraz>" &&
-            node->roditelj->djeca[0] == node) {
-            string s = "\tMOVE R6, R5";
-            kod.push_back(s);
-        }//----------------------------------
-
->>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_ili_izraz>" 
     && node->djeca[1]->svojstva->znak == "OP_BIN_ILI" && node->djeca[2]->svojstva->znak == "<bin_xili_izraz>"){
         bin_ili_izraz(node->djeca[0], tablica_node);
+
+        string s;
+        s = "\tMOVE R6, R" + to_string(registri);
+	    kod.push_back(s);   
+        s = "\tPUSH R" + to_string(registri);
+        kod.push_back(s);
+
         bin_xili_izraz(node->djeca[2], tablica_node);
+
+        s = "\tPOP R" + to_string(registri);
+        registri--;
+	    kod.push_back(s);
+        s = "\tMOVE R6, R" + to_string(registri);
+        kod.push_back(s);
+        registri++;
+
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
         }
@@ -1101,12 +1077,8 @@ void bin_ili_izraz(Node* node, Tablica_Node* tablica_node){
         }
         
     	//------------------------------------------------------------------
-        string s;
-        
-		s = "\tOR R" + to_string(registri) + ", R6" + ", R" +to_string(registri); 
-        kod.push_back(s);
-        s = "\tMOVE R" + to_string(registri) + ", R6";
-        kod.push_back(s);   		
+        s = "\tOR R" + to_string(registri) + ", R" + to_string(registri-1) + ", R6"; // sta god da se izracunalo stavi u R5 da R6 bude slobodan ako dode funkcija
+	    kod.push_back(s); 		
         //------------------------------------------------------------------
     }
 

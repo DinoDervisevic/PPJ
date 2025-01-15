@@ -1,79 +1,53 @@
 <prijevodna_jedinica>
  <prijevodna_jedinica>
-  <prijevodna_jedinica>
-   <vanjska_deklaracija>
-    <deklaracija>
-     <ime_tipa>
-      <specifikator_tipa>
-       KR_INT 1 int
-     <lista_init_deklaratora>
-      <init_deklarator>
-       <izravni_deklarator>
-        IDN 1 x
-       OP_PRIDRUZI 1 =
-       <inicijalizator>
-        <izraz_pridruzivanja>
-         <log_ili_izraz>
-          <log_i_izraz>
-           <bin_ili_izraz>
-            <bin_xili_izraz>
-             <bin_i_izraz>
-              <jednakosni_izraz>
-               <odnosni_izraz>
-                <aditivni_izraz>
-                 <multiplikativni_izraz>
-                  <cast_izraz>
-                   <unarni_izraz>
-                    <postfiks_izraz>
-                     <primarni_izraz>
-<<<<<<< HEAD
-                      BROJ 1 12
-=======
-                      BROJ 1 15
->>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
-     TOCKAZAREZ 1 ;
   <vanjska_deklaracija>
-   <deklaracija>
+   <definicija_funkcije>
     <ime_tipa>
      <specifikator_tipa>
-      KR_INT 2 int
-    <lista_init_deklaratora>
-     <init_deklarator>
-      <izravni_deklarator>
-       IDN 2 y
-      OP_PRIDRUZI 2 =
-      <inicijalizator>
-       <izraz_pridruzivanja>
-        <log_ili_izraz>
-         <log_i_izraz>
-          <bin_ili_izraz>
-           <bin_xili_izraz>
-            <bin_i_izraz>
-             <jednakosni_izraz>
-              <odnosni_izraz>
-               <aditivni_izraz>
-                <multiplikativni_izraz>
-                 <cast_izraz>
-                  <unarni_izraz>
-                   <postfiks_izraz>
-                    <primarni_izraz>
-                     BROJ 2 16
-    TOCKAZAREZ 2 ;
+      KR_INT 1 int
+    IDN 1 f
+    L_ZAGRADA 1 (
+    KR_VOID 1 void
+    D_ZAGRADA 1 )
+    <slozena_naredba>
+     L_VIT_ZAGRADA 1 {
+     <lista_naredbi>
+      <naredba>
+       <naredba_skoka>
+        KR_RETURN 2 return
+        <izraz>
+         <izraz_pridruzivanja>
+          <log_ili_izraz>
+           <log_i_izraz>
+            <bin_ili_izraz>
+             <bin_xili_izraz>
+              <bin_i_izraz>
+               <jednakosni_izraz>
+                <odnosni_izraz>
+                 <aditivni_izraz>
+                  <multiplikativni_izraz>
+                   <cast_izraz>
+                    <unarni_izraz>
+                     <postfiks_izraz>
+                      <primarni_izraz>
+                       BROJ 2 123
+        TOCKAZAREZ 2 ;
+     D_VIT_ZAGRADA 3 }
  <vanjska_deklaracija>
   <definicija_funkcije>
    <ime_tipa>
     <specifikator_tipa>
-     KR_INT 3 int
-   IDN 3 main
-   L_ZAGRADA 3 (
-   KR_VOID 3 void
-   D_ZAGRADA 3 )
+     KR_INT 4 int
+   IDN 4 main
+   L_ZAGRADA 4 (
+   KR_VOID 4 void
+   D_ZAGRADA 4 )
    <slozena_naredba>
-    L_VIT_ZAGRADA 3 {
+    L_VIT_ZAGRADA 4 {
     <lista_naredbi>
      <naredba>
       <naredba_skoka>
-       KR_RETURN 4 return
+       KR_RETURN 5 return
        <izraz>
         <izraz_pridruzivanja>
          <log_ili_izraz>
@@ -81,35 +55,17 @@
            <bin_ili_izraz>
             <bin_xili_izraz>
              <bin_i_izraz>
-<<<<<<< HEAD
-              <bin_i_izraz>
-               <jednakosni_izraz>
-                <odnosni_izraz>
-=======
               <jednakosni_izraz>
                <odnosni_izraz>
                 <aditivni_izraz>
->>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
-                 <aditivni_izraz>
-                  <multiplikativni_izraz>
-                   <cast_izraz>
-                    <unarni_izraz>
-                     <postfiks_izraz>
-                      <primarni_izraz>
-                       IDN 4 x
-<<<<<<< HEAD
-              OP_BIN_I 4 &
-              <jednakosni_izraz>
-               <odnosni_izraz>
-                <aditivni_izraz>
-=======
-                 PLUS 4 +
->>>>>>> 462669f68ab06e6fa70591fb373659e1b8524a0c
                  <multiplikativni_izraz>
                   <cast_izraz>
                    <unarni_izraz>
                     <postfiks_izraz>
-                     <primarni_izraz>
-                      IDN 4 y
-       TOCKAZAREZ 4 ;
-    D_VIT_ZAGRADA 5 }
+                     <postfiks_izraz>
+                      <primarni_izraz>
+                       IDN 5 f
+                     L_ZAGRADA 5 (
+                     D_ZAGRADA 5 )
+       TOCKAZAREZ 5 ;
+    D_VIT_ZAGRADA 6 }
