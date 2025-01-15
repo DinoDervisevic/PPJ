@@ -17,6 +17,7 @@ vector <string> kod;
 
 int registri = 5;
 int vrhStoga = 40000;
+int brojacLabela = 0;
 
 
 class Node_svojstva{
@@ -291,6 +292,7 @@ int spremi_komtekst(Node* node){
 void obnovi_komtekst(int broj){
     for(; broj > 0; broj--){
         kod.push_back("\tPOP R" + to_string(registri-broj+1));
+        registri--;
         vrhStoga += 4;
     }
 }
@@ -785,18 +787,13 @@ void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
     
 	    multiplikativni_izraz(node->djeca[0], tablica_node);
 	
-	    // Postavi svojstva trenutnog èvora
+	    // Postavi svojstva trenutnog ï¿½vora
 	    node->svojstva->tip = node->djeca[0]->svojstva->tip;
 	    node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
 	
 		//---------------------------------------
 	    // Generiranje koda samo za prvi operand
-        if (node->roditelj != nullptr && 
-            node->roditelj->svojstva->znak == "<aditivni_izraz>" &&
-            node->roditelj->djeca[0] == node) {
-            string s = "\tMOVE R6, R5";
-            kod.push_back(s);
-        }
+
 		//---------------------------------------
 	}
 
@@ -804,30 +801,37 @@ void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<aditivni_izraz>" 
     && (node->djeca[1]->svojstva->znak == "PLUS" || node->djeca[1]->svojstva->znak == "MINUS")
     && node->djeca[2]->svojstva->znak == "<multiplikativni_izraz>"){
-          
-		  		
+
+        string s;
 		aditivni_izraz(node->djeca[0], tablica_node);
         
-        
+        s = "\tMOVE R6, R" + to_string(registri);
+	    kod.push_back(s);   
+        s = "\tPUSH R" + to_string(registri);
+        kod.push_back(s);
 
         multiplikativni_izraz(node->djeca[2], tablica_node); // recentMultiplikativniIzraz trebao bi biti u R6 jer je sve u R6
+        
+        s = "\tPOP R" + to_string(registri);
+        registri--;
+	    kod.push_back(s);
+        s = "\tMOVE R6, R" + to_string(registri);
+        kod.push_back(s);
+        registri++;
+
+        
         //------------------------------------------------------------------
         // basically nadodaj Multiplikativni u R5 i spremi u R6
         // rezultat funkcije je u R6
         
-        string s;
+        
         
 		if (node->djeca[1]->svojstva->znak == "PLUS") { // dodaj multiplikativni izraz koji je izracunat u registru R6
-		 
-			s = "\tADD R" + to_string(registri) + ", R6" + ", R" +to_string(registri); // sta god da se izracunalo stavi u R5 da R6 bude slobodan ako dode funkcija
-	        kod.push_back(s);
-	        s = "\tMOVE R" + to_string(registri) + ", R6";
-	        kod.push_back(s);   
+			s = "\tADD R" + to_string(registri) + ", R" + to_string(registri-1) + ", R6"; // sta god da se izracunalo stavi u R5 da R6 bude slobodan ako dode funkcija
+	        kod.push_back(s);  
     	}
     	else { // mora da je MINUS
-    		s = "\tSUB R" + to_string(registri) + ", R6" + ", R" +to_string(registri); // sta god da se izracunalo stavi u R5 da R6 bude slobodan ako dode funkcija
-	        kod.push_back(s);
-	        s = "\tMOVE R" + to_string(registri) + ", R6";
+    		s = "\tSUB R" + to_string(registri) + ", R" + to_string(registri-1) + ", R6" ; // sta god da se izracunalo stavi u R5 da R6 bude slobodan ako dode funkcija
 	        kod.push_back(s);
 		}
 		
@@ -914,20 +918,57 @@ void bin_i_izraz(Node* node, Tablica_Node* tablica_node){
         node->svojstva->tip = node->djeca[0]->svojstva->tip;
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
         
-    
+    /*
     	//----------------------------------
     	// Generiranje koda za prvi operand
         string s = "\tMOVE R6, R" + to_string(registri);
         kod.push_back(s);
     	//----------------------------------
-
+    */
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_i_izraz>" 
     && node->djeca[1]->svojstva->znak == "OP_BIN_I" && node->djeca[2]->svojstva->znak == "<jednakosni_izraz>"){
         bin_i_izraz(node->djeca[0], tablica_node);
+
+        string s;
+        s = "\tMOVE R6, R" + to_string(registri);
+	    kod.push_back(s);   
+        s = "\tPUSH R" + to_string(registri);
+        kod.push_back(s);
         
         jednakosni_izraz(node->djeca[2], tablica_node);
+
+        s = "\tPOP R" + to_string(registri);
+        registri--;
+	    kod.push_back(s);
+        s = "\tMOVE R6, R" + to_string(registri);
+        kod.push_back(s);
+        registri++;
+
+
+        s = "\tCMP R" + to_string(registri) + ", 0";
+        kod.push_back(s);
+        s = "\tJP_EQ ZERO_FOUND" + to_string(brojacLabela);
+        kod.push_back(s);
+
+        s = "\tCMP R" + to_string(registri-1) + ", 0";
+        kod.push_back(s);
+        s = "\tJP_EQ ZERO_FOUND" + to_string(brojacLabela);
+        kod.push_back(s);
+
+        s = "\tMOVE 1, R6";
+        kod.push_back(s);
+        s = "\tJP END_ZERO_FOUND" + to_string(brojacLabela);
+        kod.push_back(s);
+        s = "ZERO_FOUND" + to_string(brojacLabela);
+        kod.push_back(s);
+        s = "\tMOVE 0, R6";
+        kod.push_back(s);
+        s = "END_ZERO_FOUND" + to_string(brojacLabela);
+        kod.push_back(s);
+
+        brojacLabela++;
         
 		if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
@@ -937,15 +978,16 @@ void bin_i_izraz(Node* node, Tablica_Node* tablica_node){
             node->svojstva->l_izraz = false;
         }
         
-        
+        /*
         //------------------------------------------------------------------
-        string s;
+        
         
 		s = "\tAND R" + to_string(registri) + ", R6" + ", R" +to_string(registri); 
         kod.push_back(s);
         s = "\tMOVE R" + to_string(registri) + ", R6";
         kod.push_back(s);   		
         //------------------------------------------------------------------
+        */
     }
 
     else{
@@ -960,13 +1002,14 @@ void bin_xili_izraz(Node* node, Tablica_Node* tablica_node){
         bin_i_izraz(node->djeca[0], tablica_node);
         node->svojstva->tip = node->djeca[0]->svojstva->tip;
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
-                
+
+        /*  
     	//----------------------------------
     	// Generiranje koda za prvi operand
         string s = "\tMOVE R6, R" + to_string(registri);
         kod.push_back(s);
     	//----------------------------------
-
+    	*/
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_xili_izraz>" 
@@ -1005,12 +1048,13 @@ void bin_ili_izraz(Node* node, Tablica_Node* tablica_node){
         node->svojstva->tip = node->djeca[0]->svojstva->tip;
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
     
+    /*
     	//----------------------------------
     	// Generiranje koda za prvi operand
         string s = "\tMOVE R6, R" + to_string(registri);
         kod.push_back(s);
     	//----------------------------------
-
+    */
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<bin_ili_izraz>" 
