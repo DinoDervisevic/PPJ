@@ -402,7 +402,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                         string s;
                         int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
                         //cout << trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] << endl;
-                        if(trenutna_tablica->main){
+                        if(true){
                             pozicija -= 4;
                         }
                         if(pozicija < 0){
@@ -1288,13 +1288,14 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     else if(node->djeca.size() == 4 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
     && node->djeca[1]->svojstva->znak == "<lista_deklaracija>" && node->djeca[2]->svojstva->znak == "<lista_naredbi>"
     && node->djeca[3]->svojstva->znak == "D_VIT_ZAGRADA"){
-        lista_deklaracija(node->djeca[1], nova_tablica);
-        lista_naredbi(node->djeca[2], nova_tablica);
         int j = 0;
         if(node->roditelj->svojstva->znak == "<definicija_funkcije>") {
             nova_tablica->adresa_na_stogu["callback funkcije"] = i*4;
             nova_tablica->relativni_vrh += 4;
         }
+        lista_deklaracija(node->djeca[1], nova_tablica);
+        lista_naredbi(node->djeca[2], nova_tablica);
+        
         for(auto node : nova_tablica->zapis){
             if(!node.second->svojstva->jeParametar){
                 j++;
@@ -1738,7 +1739,7 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
     if(tablica_node->adresa_na_stogu.find("callback funkcije") == tablica_node->adresa_na_stogu.end()){
         i = 1;
     }
-    else i = tablica_node->adresa_na_stogu["callback funkcije"]+1;
+    else i = tablica_node->relativni_vrh+4;
     string s;
 
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<izravni_deklarator>"){
