@@ -19,6 +19,11 @@ int registri = 5;
 int vrhStoga = 40000;
 int brojPusheva = 0;
 
+//
+//
+//MOGUCI PROBLEM: za brojPusheva resetiram na 0 kad se pozove funkcija, no postoji mogucnost da je to krivo, ne mogu sad smislit jel to oekj uvijek
+//
+//
 
 class Node_svojstva{
     public:
@@ -395,6 +400,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                     if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
                         string s;
                         int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
+                        //cout << trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] << endl;
                         if(pozicija < 0){
                             s = "\tLOAD R6, (R7" + pretvori_u_heksadekadski(pozicija) + ")";
                         }
@@ -1249,6 +1255,9 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
 
     int i = 0;
     if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
+        if(node->roditelj->djeca[1]->svojstva->leks_jedinka == "main"){
+            nova_tablica->relativni_vrh += 4;
+        }
         if(node->roditelj->djeca[3]->svojstva->znak == "<lista_parametara>"){
             for(; i < node->roditelj->djeca[3]->svojstva->argumenti.size(); i++){
                 Node* parametar = new Node();
@@ -1277,8 +1286,10 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
         lista_deklaracija(node->djeca[1], nova_tablica);
         lista_naredbi(node->djeca[2], nova_tablica);
         int j = 0;
-        if(node->roditelj->svojstva->znak == "<definicija_funkcije>") nova_tablica->adresa_na_stogu["callback funkcije"] = i*4;
-        nova_tablica->relativni_vrh += 4;
+        if(node->roditelj->svojstva->znak == "<definicija_funkcije>") {
+            nova_tablica->adresa_na_stogu["callback funkcije"] = i*4;
+            nova_tablica->relativni_vrh += 4;
+        }
         for(auto node : nova_tablica->zapis){
             if(!node.second->svojstva->jeParametar){
                 j++;
@@ -1732,7 +1743,7 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
         if(node->djeca[0]->djeca.size() == 1 && node->djeca[0]->djeca[0]->svojstva->znak == "IDN"){
             s = "\tSUB R7, 4, R7";
             kod.push_back(s);
-            tablica_node->adresa_na_stogu[node->djeca[0]->djeca[0]->svojstva->leks_jedinka] = i*4;
+            tablica_node->adresa_na_stogu[node->djeca[0]->djeca[0]->svojstva->leks_jedinka] = tablica_node->relativni_vrh;
             tablica_node->relativni_vrh += 4;
             ++i;
         }
@@ -1751,7 +1762,8 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
         if(node->djeca[0]->djeca.size() == 1 && node->djeca[0]->djeca[0]->svojstva->znak == "IDN" && !isGlobal){
             s = "\tPUSH R6";
             kod.push_back(s);
-            tablica_node->adresa_na_stogu[node->djeca[0]->djeca[0]->svojstva->leks_jedinka] = i*4;
+            tablica_node->adresa_na_stogu[node->djeca[0]->djeca[0]->svojstva->leks_jedinka] = tablica_node->relativni_vrh;
+            cout << node->djeca[0]->djeca[0]->svojstva->leks_jedinka << " " << tablica_node->relativni_vrh << endl;
             tablica_node->relativni_vrh += 4;
             ++i;
         }
@@ -2061,9 +2073,10 @@ void provjeri_definirane_funkcije(Tablica_Node* tablica, Tablica_Node* tablica_n
     }
 }
 
-void ispisi_kod(){
+void ispisi_kod(string filename){
+    ofstream file(filename);
     for(auto it = kod.begin(); it != kod.end(); it++){
-        cout << *it << endl;
+        file << *it << endl;
     }
 }
 
@@ -2078,7 +2091,7 @@ int main(void){
     root = parsiraj("ulaz.txt");
     prijevodna_jedinica(root, tablica_node);
 
-    ispisi_kod();
+    ispisi_kod("Izlaz.txt");
     return 0;
 }
 
