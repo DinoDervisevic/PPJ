@@ -916,10 +916,13 @@ void bin_i_izraz(Node* node, Tablica_Node* tablica_node){
         
     
     	//----------------------------------
-    	// Generiranje koda za prvi operand
-        string s = "\tMOVE R6, R" + to_string(registri);
-        kod.push_back(s);
-    	//----------------------------------
+    	if (node->roditelj != nullptr && 
+            node->roditelj->svojstva->znak == "<bin_i_izraz>" &&
+            node->roditelj->djeca[0] == node) {
+            string s = "\tMOVE R6, R5";
+            kod.push_back(s);
+        }
+		//----------------------------------
 
     }
 
@@ -962,10 +965,12 @@ void bin_xili_izraz(Node* node, Tablica_Node* tablica_node){
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
                 
     	//----------------------------------
-    	// Generiranje koda za prvi operand
-        string s = "\tMOVE R6, R" + to_string(registri);
-        kod.push_back(s);
-    	//----------------------------------
+    	if (node->roditelj != nullptr && 
+            node->roditelj->svojstva->znak == "<bin_xili_izraz>" &&
+            node->roditelj->djeca[0] == node) {
+            string s = "\tMOVE R6, R5";
+            kod.push_back(s);
+        }//----------------------------------
 
     }
 
@@ -1006,10 +1011,12 @@ void bin_ili_izraz(Node* node, Tablica_Node* tablica_node){
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
     
     	//----------------------------------
-    	// Generiranje koda za prvi operand
-        string s = "\tMOVE R6, R" + to_string(registri);
-        kod.push_back(s);
-    	//----------------------------------
+    	if (node->roditelj != nullptr && 
+            node->roditelj->svojstva->znak == "<bin_ili_izraz>" &&
+            node->roditelj->djeca[0] == node) {
+            string s = "\tMOVE R6, R5";
+            kod.push_back(s);
+        }//----------------------------------
 
     }
 
