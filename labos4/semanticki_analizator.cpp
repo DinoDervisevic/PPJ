@@ -75,6 +75,7 @@ class Tablica_Node{
 
         map<string, int> adresa_na_stogu;
         int relativni_vrh = 0;
+        bool main = false;
 
         vector<Node*> deklarirane_funkcije = {};
         vector<Node*> definirane_funkcije = {};
@@ -401,6 +402,9 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                         string s;
                         int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
                         //cout << trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] << endl;
+                        if(trenutna_tablica->main){
+                            pozicija -= 4;
+                        }
                         if(pozicija < 0){
                             s = "\tLOAD R6, (R7" + pretvori_u_heksadekadski(pozicija) + ")";
                         }
@@ -1252,11 +1256,12 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     Tablica_Node* nova_tablica = new Tablica_Node();
     nova_tablica->roditelj = tablica_node;
     tablica_node->djeca.push_back(nova_tablica);
+    nova_tablica->main = tablica_node->main;
 
     int i = 0;
     if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
         if(node->roditelj->djeca[1]->svojstva->leks_jedinka == "main"){
-            nova_tablica->relativni_vrh += 4;
+            nova_tablica->main = true;
         }
         if(node->roditelj->djeca[3]->svojstva->znak == "<lista_parametara>"){
             for(; i < node->roditelj->djeca[3]->svojstva->argumenti.size(); i++){
