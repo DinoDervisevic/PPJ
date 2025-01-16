@@ -313,6 +313,57 @@ string pretvori_u_heksadekadski(int broj) {
 }
 
 //------------------------------------------------------------------------------------------------
+
+void ispisi_div_funkciju() {
+    string s;
+
+    kod.push_back("\nDIV");
+
+    // --------------
+	// Spremi kontekst
+    for (int i = 0; i <= 5; i++) {
+        s = "\tPUSH R" + to_string(i);
+        kod.push_back(s);
+        vrhStoga -= 4;
+    }
+    // --------------
+    
+	kod.push_back("");
+    s = "\tLOAD R1, (R7+20)";  // djeljenik
+    kod.push_back(s);
+    s = "\tLOAD R2, (R7+1C)";  // djelitelj
+    kod.push_back(s);
+
+    kod.push_back("\tCMP R2, 0");   // jeli djelitelj 0
+    kod.push_back("\tMOVE %D 0, R6");  // UVIJEK
+    kod.push_back("\tJP_Z D_KRAJ"); // Ako je djelitelj 0 preskoci petlju
+
+    kod.push_back("D_LOOP");
+    kod.push_back("\tSUB R1, R2, R1");  
+    kod.push_back("\tADD R6, 1, R6");   
+    kod.push_back("\tCMP R1, 0");      
+    kod.push_back("\tJP_SGE D_LOOP");  
+
+    kod.push_back("");
+    kod.push_back("\tSUB R6, 1, R6");  // Umanji R6 za 1 jer smo prešli granicu
+
+    kod.push_back("");
+    kod.push_back("D_KRAJ");
+    
+	// --------------
+	// Obnovi kontekst
+    for (int i = 5; i >= 0; i--) {
+        s = "\tPOP R" + to_string(i);
+        kod.push_back(s);
+        vrhStoga += 4;  
+    }
+	// --------------
+    kod.push_back("\tRET");
+    
+    
+}
+
+
 //------------------------------------------------------------------------------------------------
 
 void primarni_izraz(Node* node, Tablica_Node* tablica_node);
@@ -2397,6 +2448,7 @@ int main(void){
     kod.push_back("\tMOVE 40000, R7");
     kod.push_back("\tCALL F_main");
     kod.push_back("\tHALT");
+    ispisi_div_funkciju();
 
     root = parsiraj("ulaz.txt");
     prijevodna_jedinica(root, tablica_node);
