@@ -19,6 +19,7 @@ int registri = 5;
 int vrhStoga = 40000;
 int brojPusheva = 0;
 bool retSeDesio = false;
+int elseLabel = 0;
 
 //
 //
@@ -1378,10 +1379,21 @@ void naredba_grananja(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<izraz>"
     && node->djeca[3]->svojstva->znak == "D_ZAGRADA" && node->djeca[4]->svojstva->znak == "<naredba>"){
         izraz(node->djeca[2], tablica_node);
+
+        int i = elseLabel;
+        elseLabel++;
+        string s = "\tCMP R6, 0";
+        kod.push_back(s);
+        s = "\tJP_EQ END_IF" + to_string(i);
+        kod.push_back(s);
+        
         if(!moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
         }
         naredba(node->djeca[4], tablica_node);
+
+        s = "END_IF" + to_string(i);
+        kod.push_back(s);
     }
 
     else if(node->djeca.size() == 7 && node->djeca[0]->svojstva->znak == "KR_IF" 
@@ -1389,11 +1401,29 @@ void naredba_grananja(Node* node, Tablica_Node* tablica_node){
     && node->djeca[3]->svojstva->znak == "D_ZAGRADA" && node->djeca[4]->svojstva->znak == "<naredba>"
     && node->djeca[5]->svojstva->znak == "KR_ELSE" && node->djeca[6]->svojstva->znak == "<naredba>"){
         izraz(node->djeca[2], tablica_node);
+
+        int i = elseLabel;
+        elseLabel++;
+        string s = "\tCMP R6, 0";
+        kod.push_back(s);
+        s = "\tJP_EQ ELSE_" + to_string(i);
+        kod.push_back(s);
+
         if(!moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
         }
+
         naredba(node->djeca[4], tablica_node);
+
+        s = "\tJP END_IF_" + to_string(i);
+        kod.push_back(s);
+        s = "ELSE_" + to_string(i);
+        kod.push_back(s);
+
         naredba(node->djeca[6], tablica_node);
+        
+        s = "END_IF_" + to_string(i);
+        kod.push_back(s);
     }
 
     else{
