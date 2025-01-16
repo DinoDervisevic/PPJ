@@ -91,7 +91,7 @@ map<string, Node*> funkcije;
 
 //---------------------------
 //#gl
-bool isGlobal = false;
+bool isGlobal = true;
 bool aktivnaDeklaracija = false;
 Node* trenutniIzravniDeklarator;
 //#ret
@@ -450,7 +450,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
 			if (aktivnaDeklaracija && isGlobal) { // Kao do�li smo do broja tokom deklaracije
                                                 // Definicija globalne varijable, trazi #gl
             	    string identifikator = trenutniIzravniDeklarator->djeca[0]->svojstva->leks_jedinka;
-            	    
+            	    cout << "WW";
             		string s = "G_" + identifikator + "\tDW %D " + broj_str;
             		kod.push_back(s);
             		
@@ -916,7 +916,70 @@ void odnosni_izraz(Node* node, Tablica_Node* tablica_node){
     || node->djeca[1]->svojstva->znak == "OP_LTE" || node->djeca[1]->svojstva->znak == "OP_GTE")
     && node->djeca[2]->svojstva->znak == "<aditivni_izraz>"){
         odnosni_izraz(node->djeca[0], tablica_node);
+
+        string s;
+        s = "\tMOVE R6, R" + to_string(registri);
+	    kod.push_back(s);   
+        s = "\tPUSH R" + to_string(registri);
+        kod.push_back(s);
+        brojPusheva++;
+
+
         aditivni_izraz(node->djeca[2], tablica_node);
+
+        s = "\tPOP R" + to_string(registri);
+        brojPusheva--;
+        registri--;
+	    kod.push_back(s);
+        s = "\tMOVE R6, R" + to_string(registri);
+        kod.push_back(s);
+        registri++;
+
+        int i = elseLabel;
+        elseLabel++;
+
+        if (node->djeca[1]->svojstva->znak == "OP_LT") {
+			s = "\tCMP R" + to_string(registri) + ", R" + to_string(registri-1);
+	        kod.push_back(s);  
+            s = "\tMOVE 1, R6";
+            kod.push_back(s);
+            s = "\tJR_SLT ODN_" + to_string(i);
+            kod.push_back(s);
+    	}
+    	else if (node->djeca[1]->svojstva->znak == "OP_GT") {
+			s = "\tCMP R" + to_string(registri) + ", R" + to_string(registri-1); 
+	        kod.push_back(s);  
+            s = "\tMOVE 1, R6";
+            kod.push_back(s);
+            s = "\tJR_SGT ODN_" + to_string(i);
+            kod.push_back(s);
+    	}
+        else if (node->djeca[1]->svojstva->znak == "OP_GTE") {
+			s = "\tCMP R" + to_string(registri) + ", R" + to_string(registri-1); 
+	        kod.push_back(s);  
+            s = "\tMOVE 1, R6";
+            kod.push_back(s);
+            s = "\tJR_SGE ODN_" + to_string(i);
+            kod.push_back(s);
+    	}
+        else if (node->djeca[1]->svojstva->znak == "OP_LTE") {
+			s = "\tCMP R" + to_string(registri) + ", R" + to_string(registri-1); 
+	        kod.push_back(s);  
+            s = "\tMOVE 1, R6";
+            kod.push_back(s);
+            s = "\tJR_SLE ODN_" + to_string(i);
+            kod.push_back(s);
+    	}
+
+        s = "\tMOVE 0, R6";
+        kod.push_back(s);
+        s = "\tJR ODN_" + to_string(i);
+        kod.push_back(s);
+        s = "ODN_" + to_string(i);
+        kod.push_back(s);
+        
+
+
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
         }
@@ -1256,6 +1319,7 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     nova_tablica->roditelj = tablica_node;
     tablica_node->djeca.push_back(nova_tablica);
     nova_tablica->main = tablica_node->main;
+    isGlobal = false;
 
     int i = 0;
     if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
@@ -1306,6 +1370,10 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
         greska(node);
     }
     retSeDesio = false;
+    if (tablica_node->roditelj == nullptr) { // Za definiranje globalnih varijabli #gl
+            isGlobal = true; // Tako da primarni_izraz zna
+        }
+        else isGlobal = false;
 }
 
 void lista_naredbi(Node* node, Tablica_Node* tablica_node){
@@ -1421,7 +1489,7 @@ void naredba_grananja(Node* node, Tablica_Node* tablica_node){
         kod.push_back(s);
 
         naredba(node->djeca[6], tablica_node);
-        
+
         s = "END_IF_" + to_string(i);
         kod.push_back(s);
     }
@@ -1750,12 +1818,9 @@ void deklaracija(Node* node, Tablica_Node* tablica_node){
         // -----------------------------------------------------------------------
         aktivnaDeklaracija = true;
         
-        if (tablica_node->roditelj == nullptr) { // Za definiranje globalnih varijabli #gl
-            isGlobal = true; // Tako da primarni_izraz zna
-        }
-        else isGlobal = false;
         // -----------------------------------------------------------------------        
         lista_init_deklaratora(node->djeca[1], tablica_node);
+        aktivnaDeklaracija = false;
     }
 
     else{
