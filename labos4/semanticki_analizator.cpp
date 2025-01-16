@@ -1318,6 +1318,41 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
     && node->djeca[1]->svojstva->znak == "OP_PRIDRUZI" && node->djeca[2]->svojstva->znak == "<izraz_pridruzivanja>"){
         postfiks_izraz(node->djeca[0], tablica_node);
         izraz_pridruzivanja(node->djeca[2], tablica_node);
+
+        string s;
+        cout << node->djeca[0]->djeca[0]->djeca.size() << " " << node->djeca[0]->djeca[0]->djeca[0]->svojstva->znak << endl; 
+        if(node->djeca[0]->djeca[0]->djeca.size() == 1 && node->djeca[0]->djeca[0]->djeca[0]->svojstva->znak == "IDN"){
+            Tablica_Node* trenutna_tablica = tablica_node;
+            
+                int i = 0;
+                while(trenutna_tablica != nullptr){
+                    i += trenutna_tablica->adresa_na_stogu.size();
+                    if(trenutna_tablica->roditelj == nullptr){
+                        string s = "\tSTORE R6, (" + adresa[node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka] + ")";
+                        kod.push_back(s);
+                        //string z = "\tLOAD R" + to_string(registri) + ", (" + adresa[node->djeca[0]->svojstva->leks_jedinka] + ")";
+                        //registri--;
+                        //kod.push_back(z);
+                        break;
+                    }
+                    if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
+                        string s;
+                        int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
+                        //cout << trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] << endl;
+                        if(pozicija < 0){
+                            s = "\tSTORE R6, (R7" + pretvori_u_heksadekadski(pozicija) + ")";
+                        }
+                        else s = "\tSTORE R6, (R7+" + pretvori_u_heksadekadski(pozicija) + ")";
+                        kod.push_back(s);
+                        //string z = "\tLOAD R" + to_string(registri) + ", (R7+" + to_string(i*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka]) + ")";
+                        //registri--;
+                        //kod.push_back(z);
+                        break;
+                    }
+                    trenutna_tablica = trenutna_tablica->roditelj;
+                }
+        }
+
         //cout << node->djeca[0]->svojstva->tip << " " << node->djeca[2]->svojstva->tip << endl;
         if(node->djeca[0]->svojstva->l_izraz == false || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, node->djeca[0]->svojstva->tip)){
             greska(node);
@@ -1550,11 +1585,28 @@ void naredba_petlje(Node* node, Tablica_Node* tablica_node){
     if(node->djeca.size() == 5 && node->djeca[0]->svojstva->znak == "KR_WHILE" 
     && node->djeca[1]->svojstva->znak == "L_ZAGRADA" && node->djeca[2]->svojstva->znak == "<izraz>"
     && node->djeca[3]->svojstva->znak == "D_ZAGRADA" && node->djeca[4]->svojstva->znak == "<naredba>"){
+        string s;
+        int i = elseLabel;
+        elseLabel++;
+        s = "WHILE_" + to_string(i);
+        kod.push_back(s);
+
         izraz(node->djeca[2], tablica_node);
+        
+        s = "\tCMP R6, 0";
+        kod.push_back(s);
+        s = "\tJP_EQ END_WHILE_" + to_string(i);
+        kod.push_back(s);
+
         if(!moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
         }
         naredba(node->djeca[4], tablica_node);
+        s = "\tJP WHILE_" + to_string(i);
+        kod.push_back(s);
+        s = "END_WHILE_" + to_string(i);
+        kod.push_back(s);
+
     }
 
     else if(node->djeca.size() == 6 && node->djeca[0]->svojstva->znak == "KR_FOR" 
