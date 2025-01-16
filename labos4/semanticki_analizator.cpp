@@ -18,6 +18,7 @@ vector <string> kod;
 int registri = 5;
 int vrhStoga = 40000;
 int brojPusheva = 0;
+bool retSeDesio = false;
 
 //
 //
@@ -1279,9 +1280,6 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
     if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
     && node->djeca[1]->svojstva->znak == "<lista_naredbi>" && node->djeca[2]->svojstva->znak == "D_VIT_ZAGRADA"){
         lista_naredbi(node->djeca[1], nova_tablica);
-        if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
-            kod.push_back("\tRET");
-        }
     }
 
     else if(node->djeca.size() == 4 && node->djeca[0]->svojstva->znak == "L_VIT_ZAGRADA" 
@@ -1291,22 +1289,22 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
         lista_deklaracija(node->djeca[1], nova_tablica);
         lista_naredbi(node->djeca[2], nova_tablica);
         
-        for(auto node : nova_tablica->zapis){
-            if(!node.second->svojstva->jeParametar){
-                j++;
-            } 
-        }
-        string s = "\tADD R7, " + pretvori_u_heksadekadski(j*4) + ", R7";
-        vrhStoga += i*4;
-        kod.push_back(s);
-        if(node->roditelj->svojstva->znak == "<definicija_funkcije>"){
-            kod.push_back("\tRET");
+        if(!retSeDesio){
+            for(auto node : nova_tablica->zapis){
+                if(!node.second->svojstva->jeParametar){
+                    j++;
+                } 
+            }
+            string s = "\tADD R7, " + pretvori_u_heksadekadski(j*4) + ", R7";
+            vrhStoga += i*4;
+            kod.push_back(s);
         }
     }
 
     else{
         greska(node);
     }
+    retSeDesio = false;
 }
 
 void lista_naredbi(Node* node, Tablica_Node* tablica_node){
@@ -1467,11 +1465,40 @@ void naredba_skoka(Node* node, Tablica_Node* tablica_node){
             greska(node);
         }
         node->svojstva->tip = "int";
+
+        int j = 0;
+        while(tablica_node->roditelj != nullptr){
+            for(auto node : tablica_node->zapis){
+                if(!node.second->svojstva->jeParametar){
+                    j++;
+                } 
+            }
+        tablica_node = tablica_node->roditelj;
+        }
+        kod.push_back("\tRET");
+        retSeDesio = true;
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "KR_RETURN"
     && node->djeca[1]->svojstva->znak == "<izraz>" && node->djeca[2]->svojstva->znak == "TOCKAZAREZ"){
         izraz(node->djeca[1], tablica_node);
+
+        int j = 0;
+        while(tablica_node->roditelj != nullptr){
+            for(auto node : tablica_node->zapis){
+                if(!node.second->svojstva->jeParametar){
+                    j++;
+                } 
+            }
+        tablica_node = tablica_node->roditelj;
+        }
+        
+        string s = "\tADD R7, " + pretvori_u_heksadekadski(j*4) + ", R7";
+        kod.push_back(s);
+
+        kod.push_back("\tRET");
+        retSeDesio = true;
+
         string tip = jel_u_funkciji(node);
         if(tip == "void" || !moze_se_pretvoriti(node->djeca[1]->svojstva->tip, tip)){
             greska(node);
