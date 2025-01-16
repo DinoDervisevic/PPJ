@@ -1007,7 +1007,52 @@ void jednakosni_izraz(Node* node, Tablica_Node* tablica_node){
     && (node->djeca[1]->svojstva->znak == "OP_EQ" || node->djeca[1]->svojstva->znak == "OP_NEQ")
     && node->djeca[2]->svojstva->znak == "<odnosni_izraz>"){
         jednakosni_izraz(node->djeca[0], tablica_node);
+
+        string s;
+        s = "\tMOVE R6, R" + to_string(registri);
+	    kod.push_back(s);   
+        s = "\tPUSH R" + to_string(registri);
+        kod.push_back(s);
+        brojPusheva++;
+
         odnosni_izraz(node->djeca[2], tablica_node);
+
+        s = "\tPOP R" + to_string(registri);
+        brojPusheva--;
+        registri--;
+	    kod.push_back(s);
+        s = "\tMOVE R6, R" + to_string(registri);
+        kod.push_back(s);
+        registri++;
+
+        int i = elseLabel;
+        elseLabel++;
+
+        if (node->djeca[1]->svojstva->znak == "OP_EQ") {
+			s = "\tCMP R" + to_string(registri) + ", R" + to_string(registri-1);
+	        kod.push_back(s);  
+            s = "\tMOVE 1, R6";
+            kod.push_back(s);
+            s = "\tJR_EQ ODN_" + to_string(i);
+            kod.push_back(s);
+    	}
+        else if (node->djeca[1]->svojstva->znak == "OP_NEQ") {
+			s = "\tCMP R" + to_string(registri) + ", R" + to_string(registri-1);
+	        kod.push_back(s);  
+            s = "\tMOVE 1, R6";
+            kod.push_back(s);
+            s = "\tJR_NE ODN_" + to_string(i);
+            kod.push_back(s);
+    	}
+
+        s = "\tMOVE 0, R6";
+        kod.push_back(s);
+        s = "\tJR ODN_" + to_string(i);
+        kod.push_back(s);
+        s = "ODN_" + to_string(i);
+        kod.push_back(s);
+
+
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
         }
