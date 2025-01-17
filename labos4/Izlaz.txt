@@ -43,26 +43,26 @@ globalne
 	PUSH R6
 	MOVE %D 101, R6
 	PUSH R6
-G_az20z
-G_az16z
+G_az0z	DW 0
+G_az4z	DW 0
+G_az8z	DW 0
+G_az12z	DW 0
+G_az16z	DW 0
 	POP R6
 	STORE R6, (G_az16z)
-G_az12z
 	POP R6
 	STORE R6, (G_az12z)
-G_az8z
 	POP R6
 	STORE R6, (G_az8z)
-G_az4z
 	POP R6
 	STORE R6, (G_az4z)
-G_az0z
 	POP R6
 	STORE R6, (G_az0z)
 	RET
 F_main
 	MOVE %D 1, R6
-	ADD R6, G_az0z, R6
+	MOVE G_az0z, R5
+	ADD R5, R6, R6
 	LOAD R6, (R6)
 	ADD R7, 00, R7
 	RET

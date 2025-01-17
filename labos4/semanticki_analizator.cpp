@@ -467,7 +467,9 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                         i += trenutna_tablica->adresa_na_stogu.size();
                         if(trenutna_tablica->roditelj == nullptr){
                             string s;
-                            s = "\tADD R6, " + adresa[node->djeca[0]->svojstva->leks_jedinka+"z0z"] + ", R6";
+                            s = "\tMOVE " + adresa[node->djeca[0]->svojstva->leks_jedinka+"z0z"] + ", R" + to_string(registri);
+                            kod.push_back(s);
+                            s = "\tADD R" + to_string(registri) + ", R6, R6";
                             kod.push_back(s);
                             s = "\tLOAD R6, (R6)";
                             kod.push_back(s);
@@ -2210,7 +2212,7 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
             }
             else{
                 string identifikator = node->djeca[0]->djeca[0]->svojstva->leks_jedinka;
-                string s = "G_" + identifikator;
+                string s = "G_" + identifikator + "\tDW 0";
                 kod.push_back(s);     
                 adresa[identifikator] = "G_" + identifikator; //#ret
             }
@@ -2230,7 +2232,7 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
             else{
                 for(int i = 0; i < stoi(node->djeca[0]->djeca[2]->svojstva->leks_jedinka); i++){
                     string identifikator = trenutniArray + "z" + to_string(brojPushevaArray) + "z";
-                    string s = "G_" + identifikator;
+                    string s = "G_" + identifikator + "\tDW 0";
                     kod.push_back(s);     
                     adresa[identifikator] = "G_" + identifikator; //#ret
                     brojPushevaArray += 4;
@@ -2280,11 +2282,16 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
                 }
             }
             else{
-                for(int i = stoi(node->djeca[0]->djeca[2]->svojstva->leks_jedinka); i >= 0; i--){
+                for(int i = 0; i < stoi(node->djeca[0]->djeca[2]->svojstva->leks_jedinka); i++){
                     string identifikator = trenutniArray + "z" + to_string(i*4) + "z";
-                    string s = "G_" + identifikator;
+                    string s = "G_" + identifikator + "\tDW 0";
                     kod.push_back(s);
                     adresa[identifikator] = "G_" + identifikator; //#ret
+                    brojPushevaArray += 4;
+                }
+                for(int i = stoi(node->djeca[0]->djeca[2]->svojstva->leks_jedinka); i >= 0; i--){
+                    string identifikator = trenutniArray + "z" + to_string(i*4) + "z";
+                    string s;
                     if(brojPusheva==i+1){
                         s = "\tPOP R6";
                         kod.push_back(s);
@@ -2292,7 +2299,6 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
                         s = "\tSTORE R6, (" + adresa[identifikator] + ")";
                         kod.push_back(s);
                     }
-                    brojPushevaArray += 4;
                 } 
             }
         }
