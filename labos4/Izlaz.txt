@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 	MOVE 40000, R7
 	CALL globalne
 	CALL F_main
@@ -64,3 +65,5 @@ F_main
 	LOAD R6, (R6)
 	ADD R7, 00, R7
 	RET
+=======
+>>>>>>> 1dfc4304403521ac4dd8d25e46724b1b61397afc
