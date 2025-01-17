@@ -369,6 +369,71 @@ void ispisi_div_funkciju() {
     
 }
 
+void ispisi_mul_funkciju() {
+    string s;
+
+    kod.push_back("\nMUL");
+
+    // --------------
+	// Spremi kontekst
+    for (int i = 0; i <= 5; i++) {
+        s = "\tPUSH R" + to_string(i);
+        kod.push_back(s);
+        vrhStoga -= 4;
+    }
+    // --------------
+    
+	kod.push_back("");
+    s = "\tLOAD R1, (R7+20)"; 
+    kod.push_back(s);
+    s = "\tLOAD R2, (R7+1C)";
+    kod.push_back(s);
+    
+	// Trebaju mi da ovi budu nule
+	kod.push_back("\tMOVE %D 0, R3");
+	kod.push_back("\tMOVE %D 0, R4");
+	kod.push_back("\tMOVE %D 0, R5");
+	
+	kod.push_back("\tCMP R2, 0");
+    kod.push_back("\tJP_SGE M_SKOK1"); // R2 pozitivan
+	kod.push_back("\tSUB R4, R2, R2"); // Promjeni predznak
+	kod.push_back("\tADD R3, 1, R3"); // bit ce kao ako 1 ako je jedan neparan i 2 ako su oba, znaci predznak je minus samo ako je R3 1 !!!
+	
+	kod.push_back("M_SKOK1");
+	kod.push_back("\tCMP R1, 0");
+	kod.push_back("\tJP_SGE M_LOOP"); // R1 pozitivan
+	kod.push_back("\tSUB R4, R1, R1");
+	kod.push_back("\tADD R3, 1, R3"); 
+	
+	// petlja, obodva su pozitivni
+	kod.push_back("M_LOOP");
+    kod.push_back("\tADD R5, R1, R5"); // Postavi ga da bude pozitivan (0-R2)
+	kod.push_back("\tSUB R2, 1, R2");
+    kod.push_back("\tCMP R2, 0");      
+    kod.push_back("\tJP_SGT M_LOOP");  
+	
+    kod.push_back("\tCMP R3, 1"); // Postavi ga da bude pozitivan (0-R2)
+	kod.push_back("\tJP_EQ M_NEG");
+    kod.push_back("\tJP M_KRAJ");
+    
+	kod.push_back("M_NEG"); // nije potrebno
+	kod.push_back("\tSUB R4, R5, R5");  
+	
+	kod.push_back("M_KRAJ");
+    kod.push_back("\tMOVE R5, R6");
+	// --------------
+	// Obnovi kontekst
+    for (int i = 5; i >= 0; i--) {
+        s = "\tPOP R" + to_string(i);
+        kod.push_back(s);
+        vrhStoga += 4;  
+    }
+	// --------------
+    kod.push_back("\tRET");
+    
+    
+}
+
 
 //------------------------------------------------------------------------------------------------
 
@@ -2657,7 +2722,9 @@ int main(void){
     kod.push_back("\tHALT");
     
     ispisi_div_funkciju();
-    kod.push_back("globalne");
+    ispisi_mul_funkciju();
+    
+	kod.push_back("globalne");
 
     root = parsiraj("ulaz.txt");
     prijevodna_jedinica(root, tablica_node);
