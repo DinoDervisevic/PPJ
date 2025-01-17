@@ -467,6 +467,8 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                         i += trenutna_tablica->adresa_na_stogu.size();
                         if(trenutna_tablica->roditelj == nullptr){
                             string s;
+                            s = "\tSHL R6, 2, R6";
+                            kod.push_back(s);
                             s = "\tMOVE " + adresa[node->djeca[0]->svojstva->leks_jedinka+"z0z"] + ", R" + to_string(registri);
                             kod.push_back(s);
                             s = "\tADD R" + to_string(registri) + ", R6, R6";
@@ -477,6 +479,8 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                         }
                         if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
                             string s;
+                            s = "\tSHL R6, 2, R6";
+                            kod.push_back(s);
                             int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
                             s = "\tADD R6, " + pretvori_u_heksadekadski(pozicija) + ", R6";
                             kod.push_back(s);
@@ -1569,6 +1573,8 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
                     i += trenutna_tablica->adresa_na_stogu.size();
                     string broj = node->djeca[0]->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka+"z0z";
                     if(trenutna_tablica->roditelj == nullptr){
+                        s = "\tSHL R6, 2, R6";
+                        kod.push_back(s);
                         s = "\tADD R6, " + adresa[broj] + ", R6";
                         kod.push_back(s);
                         s = "\tSTORE R" + to_string(registri) + ", (R6)";
