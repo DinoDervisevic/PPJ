@@ -477,14 +477,18 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                             kod.push_back(s);
                             break;
                         }
-                        if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
+                        if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka+"z0z") != trenutna_tablica->adresa_na_stogu.end()){
                             string s;
                             s = "\tSHL R6, 2, R6";
                             kod.push_back(s);
-                            int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
-                            s = "\tADD R6, " + pretvori_u_heksadekadski(pozicija) + ", R6";
+                            int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka+"z0z"] + brojPusheva*4;
+                            s = "\tMOVE %D " + to_string(pozicija) + " R" + to_string(registri);
                             kod.push_back(s);
-                            s = "\tLOAD R6, (R7+R6)";
+                            s = "\tSUB R6, R" + to_string(registri) + ", R6";
+                            kod.push_back(s);
+                            s = "\tADD R6, R7, R6";
+                            kod.push_back(s);
+                            s = "\tLOAD R6, (R6)";
                             kod.push_back(s);
                             break;
                         }

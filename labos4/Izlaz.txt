@@ -33,61 +33,30 @@ D_KRAJ
 	POP R0
 	RET
 globalne
-G_az0z	DW 0
-G_az4z	DW 0
-G_az8z	DW 0
-G_az12z	DW 0
-G_az16z	DW 0
-	RET
-F_main
-	MOVE %D 0, R6
-	MOVE R6, R5
-	PUSH R5
-	MOVE %D 0, R6
-	POP R5
-	SHL R6, 2, R6
-	ADD R6, G_az0z, R6
-	STORE R5, (R6)
+F_f
 	MOVE %D 123, R6
 	MOVE R6, R5
 	PUSH R5
-	MOVE %D 4, R6
+	MOVE %D 3, R6
 	POP R5
+	MOVE R5, R6
+	STORE R6, (R7+04)
+	RET
+F_main
+	SUB R7, 4, R7
+	SUB R7, 4, R7
+	SUB R7, 4, R7
+	SUB R7, 4, R7
+	SUB R7, 4, R7
+	LOAD R6, ()
+	PUSH R6
+	CALL F_f
+	ADD R7, 04, R7
+	MOVE %D 3, R6
 	SHL R6, 2, R6
-	ADD R6, G_az0z, R6
-	STORE R5, (R6)
-	MOVE %D 1, R6
-	MOVE R6, R5
-	PUSH R5
-	MOVE %D 2, R6
-	POP R5
-	SHL R6, 2, R6
-	ADD R6, G_az0z, R6
-	STORE R5, (R6)
-	MOVE %D 0, R6
-	SHL R6, 2, R6
-	MOVE G_az0z, R5
-	ADD R5, R6, R6
+	MOVE %D 16 R5
+	SUB R6, R5, R6
+	ADD R6, R7, R6
 	LOAD R6, (R6)
-	MOVE R6, R5
-	PUSH R5
-	MOVE %D 4, R6
-	SHL R6, 2, R6
-	MOVE G_az0z, R5
-	ADD R5, R6, R6
-	LOAD R6, (R6)
-	POP R5
-	MOVE R6, R4
-	ADD R5, R4, R6
-	MOVE R6, R5
-	PUSH R5
-	MOVE %D 2, R6
-	SHL R6, 2, R6
-	MOVE G_az0z, R5
-	ADD R5, R6, R6
-	LOAD R6, (R6)
-	POP R5
-	MOVE R6, R4
-	ADD R5, R4, R6
-	ADD R7, 00, R7
+	ADD R7, 04, R7
 	RET
