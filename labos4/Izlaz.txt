@@ -32,15 +32,18 @@ D_KRAJ
 	POP R1
 	POP R0
 	RET
-globalne
+globalne DW %D 0
+	RET
 F_f
 	MOVE %D 123, R6
 	MOVE R6, R5
 	PUSH R5
 	MOVE %D 3, R6
 	POP R5
-	MOVE R5, R6
-	STORE R6, (R7+04)
+	SHL R6, 2, R6
+	LOAD R3, (R7+04)
+	SUB R3, R6, R6
+	STORE R5, (R6)
 	RET
 F_main
 	SUB R7, 4, R7
@@ -48,15 +51,16 @@ F_main
 	SUB R7, 4, R7
 	SUB R7, 4, R7
 	SUB R7, 4, R7
-	LOAD R6, ()
+	MOVE %D 16, R6
+	ADD R6, R7, R6
 	PUSH R6
 	CALL F_f
 	ADD R7, 04, R7
 	MOVE %D 3, R6
 	SHL R6, 2, R6
-	MOVE %D 16 R5
-	SUB R6, R5, R6
+	MOVE %D 16, R5
+	SUB R5, R6, R6
 	ADD R6, R7, R6
 	LOAD R6, (R6)
-	ADD R7, 04, R7
+	ADD R7, 00, R7
 	RET
