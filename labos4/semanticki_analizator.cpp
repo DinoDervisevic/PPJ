@@ -340,20 +340,37 @@ void ispisi_div_funkciju() {
     s = "\tLOAD R2, (R7+1C)";  // djelitelj
     kod.push_back(s);
 
-    kod.push_back("\tCMP R2, 0");   // jeli djelitelj 0
+	kod.push_back("\tMOVE %D 0, R3");
+	kod.push_back("\tMOVE %D 0, R4");
+    
+	kod.push_back("\tCMP R2, 0");   // jeli djelitelj 0
     kod.push_back("\tMOVE %D 0, R6");  // UVIJEK
     kod.push_back("\tJP_Z D_KRAJ"); // Ako je djelitelj 0 preskoci petlju
-
+	kod.push_back("\tJP_SGE D_SKOK1");
+	kod.push_back("\tSUB R4, R2, R2");
+	kod.push_back("\tADD R3, 1, R3");
+	
+	kod.push_back("D_SKOK1");
+	kod.push_back("\tCMP R1, 0");
+	kod.push_back("\tJP_SGE D_LOOP");
+	kod.push_back("\tSUB R4, R1, R1");
+	kod.push_back("\tADD R3, 1, R3");
+	
     kod.push_back("D_LOOP");
     kod.push_back("\tSUB R1, R2, R1");  
     kod.push_back("\tADD R6, 1, R6");   
     kod.push_back("\tCMP R1, 0");      
     kod.push_back("\tJP_SGE D_LOOP");  
 
-    kod.push_back("");
     kod.push_back("\tSUB R6, 1, R6");  // Umanji R6 za 1 jer smo pre�li granicu
 
-    kod.push_back("");
+	kod.push_back("\tCMP R3, 1");      
+    kod.push_back("\tJP_EQ D_NEG");
+	kod.push_back("\tJP D_KRAJ");    
+    
+	kod.push_back("D_NEG");
+	kod.push_back("\tSUB R4, R6, R6");      
+	      
     kod.push_back("D_KRAJ");
     
 	// --------------
@@ -532,8 +549,6 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                         i += trenutna_tablica->adresa_na_stogu.size();
                         if(trenutna_tablica->roditelj == nullptr){
                             string s;
-                            s = "\tSHL R6, 2, R6";
-                            kod.push_back(s);
                             s = "\tMOVE " + adresa[node->djeca[0]->svojstva->leks_jedinka+"z0z"] + ", R" + to_string(registri);
                             kod.push_back(s);
                             s = "\tADD R" + to_string(registri) + ", R6, R6";
@@ -542,18 +557,12 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                             kod.push_back(s);
                             break;
                         }
-                        if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka+"z0z") != trenutna_tablica->adresa_na_stogu.end()){
+                        if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
                             string s;
-                            s = "\tSHL R6, 2, R6";
+                            int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
+                            s = "\tADD R6, " + pretvori_u_heksadekadski(pozicija) + ", R6";
                             kod.push_back(s);
-                            int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka+"z0z"] + brojPusheva*4;
-                            s = "\tMOVE %D " + to_string(pozicija) + " R" + to_string(registri);
-                            kod.push_back(s);
-                            s = "\tSUB R6, R" + to_string(registri) + ", R6";
-                            kod.push_back(s);
-                            s = "\tADD R6, R7, R6";
-                            kod.push_back(s);
-                            s = "\tLOAD R6, (R6)";
+                            s = "\tLOAD R6, (R7+R6)";
                             kod.push_back(s);
                             break;
                         }
@@ -1642,8 +1651,6 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
                     i += trenutna_tablica->adresa_na_stogu.size();
                     string broj = node->djeca[0]->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka+"z0z";
                     if(trenutna_tablica->roditelj == nullptr){
-                        s = "\tSHL R6, 2, R6";
-                        kod.push_back(s);
                         s = "\tADD R6, " + adresa[broj] + ", R6";
                         kod.push_back(s);
                         s = "\tSTORE R" + to_string(registri) + ", (R6)";
