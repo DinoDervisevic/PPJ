@@ -321,6 +321,70 @@ string pretvori_u_heksadekadski(int broj) {
 
 //------------------------------------------------------------------------------------------------
 
+void ispisi_mod_funkciju() {
+    string s;
+
+    kod.push_back("\nMOD");
+
+    // --------------
+	// Spremi kontekst
+    for (int i = 0; i <= 5; i++) {
+        s = "\tPUSH R" + to_string(i);
+        kod.push_back(s);
+        vrhStoga -= 4;
+    }
+    // --------------
+    
+	kod.push_back("");
+    s = "\tLOAD R1, (R7+20)";  // djeljenik
+    kod.push_back(s);
+    s = "\tLOAD R2, (R7+1C)";  // djelitelj
+    kod.push_back(s);
+
+	kod.push_back("\tMOVE %D 0, R3");
+	kod.push_back("\tMOVE %D 0, R4");
+    
+	kod.push_back("\tCMP R2, 0");
+    kod.push_back("\tMOVE %D 0, R6");
+    kod.push_back("\tJP_Z O_KRAJ");
+	kod.push_back("\tJP_SGE O_SKOK1");
+	kod.push_back("\tSUB R4, R2, R2");
+	kod.push_back("\tADD R3, 1, R3");
+	
+	kod.push_back("O_SKOK1");
+	kod.push_back("\tCMP R1, 0");
+	kod.push_back("\tJP_SGE O_LOOP");
+	kod.push_back("\tSUB R4, R1, R1");
+	kod.push_back("\tADD R3, 1, R3");
+	
+    kod.push_back("O_LOOP");
+    kod.push_back("\tSUB R1, R2, R1");  
+    kod.push_back("\tCMP R1, 0");      
+    kod.push_back("\tJP_SGE O_LOOP");  
+
+    kod.push_back("\tMOVE R1, R6");  
+    kod.push_back("\tADD R6, R2, R6");  
+    
+	kod.push_back("\tCMP R3, 1");      
+    kod.push_back("\tJP_EQ O_NEG");
+	kod.push_back("\tJP O_KRAJ");    
+    
+	kod.push_back("O_NEG");
+	kod.push_back("\tSUB R4, R6, R6");      
+	      
+    kod.push_back("O_KRAJ");
+    
+	// --------------
+	// Obnovi kontekst
+    for (int i = 5; i >= 0; i--) {
+        s = "\tPOP R" + to_string(i);
+        kod.push_back(s);
+        vrhStoga += 4;  
+    }
+	// --------------
+    kod.push_back("\tRET");
+}
+
 void ispisi_div_funkciju() {
     string s;
 
@@ -383,8 +447,6 @@ void ispisi_div_funkciju() {
     }
 	// --------------
     kod.push_back("\tRET");
-    
-    
 }
 
 void ispisi_mul_funkciju() {
@@ -451,7 +513,6 @@ void ispisi_mul_funkciju() {
     
     
 }
-
 
 //------------------------------------------------------------------------------------------------
 
@@ -526,14 +587,14 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             // idemo spremiti varijablu u R6 i neki registar
 
             /*if (aktivnaDeklaracija && isGlobal 
-            &&  trenutniIzravniDeklarator->djeca[0]->svojstva->leks_jedinka != node->djeca[0]->svojstva->leks_jedinka) { // Kao do�li smo do broja tokom deklaracije
+            &&  trenutniIzravniDeklarator->djeca[0]->svojstva->leks_jedinka != node->djeca[0]->svojstva->leks_jedinka) { // Kao do?li smo do broja tokom deklaracije
                 string identifikator = trenutniIzravniDeklarator->djeca[0]->svojstva->leks_jedinka;
             	adresa[node->djeca[0]->svojstva->leks_jedinka] = adresa[identifikator]; //#ret
                 return;
 			}
 
             if (aktivnaDeklaracija && isGlobal 
-            &&  trenutniIzravniDeklarator->djeca[0]->svojstva->leks_jedinka == node->djeca[0]->svojstva->leks_jedinka) { // Kao do�li smo do broja tokom deklaracije
+            &&  trenutniIzravniDeklarator->djeca[0]->svojstva->leks_jedinka == node->djeca[0]->svojstva->leks_jedinka) { // Kao do?li smo do broja tokom deklaracije
                 string identifikator = trenutniIzravniDeklarator->djeca[0]->svojstva->leks_jedinka;
                 string s = "G_" + identifikator + "\tDW %D " + "1234555"; //garbage value (nasumicni)
             	kod.push_back(s);
@@ -551,6 +612,8 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                         if(trenutna_tablica->roditelj == nullptr){
                             if(adresa.find(node->djeca[0]->svojstva->leks_jedinka+"z0z") == adresa.end()) break;
                             string s;
+                            s = "\tSHL R6, 2, R6";
+                            kod.push_back(s);
                             s = "\tMOVE " + adresa[node->djeca[0]->svojstva->leks_jedinka+"z0z"] + ", R" + to_string(registri);
                             kod.push_back(s);
                             s = "\tADD R" + to_string(registri) + ", R6, R6";
@@ -559,9 +622,6 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                             kod.push_back(s);
                             return;
                         }
-<<<<<<< HEAD
-                        if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
-=======
                         if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka+"z0z") != trenutna_tablica->adresa_na_stogu.end()){
                             int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka+"z0z"] + brojPusheva*4;
                             if(uzimamArgumente){
@@ -572,14 +632,9 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                                 kod.push_back(s);
                                 return;
                             }
->>>>>>> 68ee2080a8554d3f0a7dfe635b06a5d5d1c08411
                             string s;
-                            int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
-                            s = "\tADD R6, " + pretvori_u_heksadekadski(pozicija) + ", R6";
+                            s = "\tSHL R6, 2, R6";
                             kod.push_back(s);
-<<<<<<< HEAD
-                            s = "\tLOAD R6, (R7+R6)";
-=======
                             s = "\tMOVE %D " + to_string(pozicija) + ", R" + to_string(registri);
                             kod.push_back(s);
                             s = "\tSUB R" + to_string(registri) + ", R6, R6";
@@ -587,7 +642,6 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                             s = "\tADD R6, R7, R6";
                             kod.push_back(s);
                             s = "\tLOAD R6, (R6)";
->>>>>>> 68ee2080a8554d3f0a7dfe635b06a5d5d1c08411
                             kod.push_back(s);
                             return;
                         }
@@ -668,7 +722,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
 
             // -----------------------------------------------------------------------
 			
-			/*if (aktivnaDeklaracija && isGlobal) { // Kao do�li smo do broja tokom deklaracije
+			/*if (aktivnaDeklaracija && isGlobal) { // Kao do?li smo do broja tokom deklaracije
                                                 // Definicija globalne varijable, trazi #gl
                     if(trenutniArray != ""){
                         string identifikator = trenutniArray + "z" + to_string(brojPushevaArray) + "z";
@@ -719,7 +773,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                 greska(node);
             }
             string broj_str = to_string((int)node->djeca[0]->svojstva->leks_jedinka[1]);
-            /*if (aktivnaDeklaracija && isGlobal) { // Kao do�li smo do broja tokom deklaracije
+            /*if (aktivnaDeklaracija && isGlobal) { // Kao do?li smo do broja tokom deklaracije
                                                 // Definicija globalne varijable, trazi #gl
                     if(trenutniArray != ""){
                         string identifikator = trenutniArray + "z" + to_string(brojPushevaArray) + "z";
@@ -1166,7 +1220,7 @@ void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
     
 	    multiplikativni_izraz(node->djeca[0], tablica_node);
 	
-	    // Postavi svojstva trenutnog �vora
+	    // Postavi svojstva trenutnog ?vora
 	    node->svojstva->tip = node->djeca[0]->svojstva->tip;
 	    node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
 	
@@ -1703,13 +1757,9 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
                     i += trenutna_tablica->adresa_na_stogu.size();
                     string broj = node->djeca[0]->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka;
                     if(trenutna_tablica->roditelj == nullptr){
-<<<<<<< HEAD
-                        s = "\tADD R6, " + adresa[broj] + ", R6";
-=======
                         s = "\tSHL R6, 2, R6";
                         kod.push_back(s);
                         s = "\tADD R6, " + adresa[broj+"z0z"] + ", R6";
->>>>>>> 68ee2080a8554d3f0a7dfe635b06a5d5d1c08411
                         kod.push_back(s);
                         s = "\tSTORE R" + to_string(registri+1) + ", (R6)";
                         kod.push_back(s);
@@ -2835,6 +2885,7 @@ int main(void){
     
     ispisi_div_funkciju();
     ispisi_mul_funkciju();
+    ispisi_mod_funkciju();
     
 	kod.push_back("globalne");
 
