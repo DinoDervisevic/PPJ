@@ -718,7 +718,6 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             }
             if(node->roditelj->roditelj->roditelj->roditelj->svojstva->znak == "<unarni_izraz>"
             && node->roditelj->roditelj->roditelj->roditelj->djeca[0]->djeca[0]->svojstva->znak == "MINUS"){
-                broj_str  = "-" + broj_str;
                 if(broj-1 > INT_MAX){
                     greska(node);
                 }
@@ -1105,8 +1104,44 @@ void unarni_izraz(Node* node, Tablica_Node* tablica_node){
 
     else if(node->djeca.size() == 2 && node->djeca[0]->svojstva->znak == "<unarni_operator>"
     && node->djeca[1]->svojstva->znak == "<cast_izraz>"){
-        cast_izraz(node->djeca[1], tablica_node);
         unarni_operator(node->djeca[0], tablica_node);
+        string s;
+        cast_izraz(node->djeca[1], tablica_node);
+
+        if(node->djeca[0]->djeca.size() == 1 && node->djeca[0]->djeca[0]->svojstva->znak == "MINUS"){
+            s = "\tMOVE %D 0, R" + to_string(registri);
+            kod.push_back(s);
+            s = "\tSUB R" + to_string(registri) + ", R6, R6";
+            kod.push_back(s);
+            
+        }
+
+        else if(node->djeca[0]->djeca.size() == 1 && node->djeca[0]->djeca[0]->svojstva->znak == "OP_TILDA"){
+            s = "\tXOR R6, %D -1, R6";
+            kod.push_back(s);
+        }
+
+        else if(node->djeca[0]->djeca.size() == 1 && node->djeca[0]->djeca[0]->svojstva->znak == "OP_NEG"){
+            s = "\tCMP R6, 0";
+            kod.push_back(s);
+            int i = elseLabel;
+            elseLabel++;
+            s = "\tJP_EQ JEDAN" + to_string(i);
+            kod.push_back(s);
+            s = "\tMOVE %D 0, R6";
+            kod.push_back(s);
+            s = "\tJP SKOK" + to_string(i);
+            kod.push_back(s);
+            s = "JEDAN" + to_string(i);
+            kod.push_back(s);
+            s = "\tMOVE %D 1, R6";
+            kod.push_back(s);
+            s = "SKOK" + to_string(i);
+            kod.push_back(s);
+
+        }
+
+        
         if(moze_se_pretvoriti(node->djeca[1]->svojstva->tip, "int")){
             node->svojstva->tip = "int";
             node->svojstva->l_izraz = false;
