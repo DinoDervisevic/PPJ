@@ -828,6 +828,40 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             } else {
                 greska(node);
             }
+
+            if(isGlobal){
+                string s;
+                s = "\tMOVE %D 0, R6";
+                kod.push_back(s);
+                s = "\tPUSH R6";
+                kod.push_back(s);
+                tablica_node->brojPusheva++;
+                for (int i = node->djeca[0]->svojstva->leks_jedinka.size()-2; i > 0; --i) {
+                    char z = node->djeca[0]->svojstva->leks_jedinka[i];
+                    s = "\tMOVE %D " + to_string((int)z) + ", R6";
+                    kod.push_back(s);
+                    s = "\tPUSH R6";
+                    kod.push_back(s);
+                    tablica_node->brojPusheva++;
+                }
+            }
+            else{
+                string s;
+                s = "\tMOVE %D 0, R6";
+                kod.push_back(s);
+                s = "\tSTORE R6, (R7)";
+                kod.push_back(s);
+                int j = 1;
+                for (int i = node->djeca[0]->svojstva->leks_jedinka.size()-2; i > 0; --i) {
+                    char z = node->djeca[0]->svojstva->leks_jedinka[i];
+                    s = "\tMOVE %D " + to_string((int)z) + ", R6";
+                    kod.push_back(s);
+                    s = "\tSTORE R6, (R7+" + pretvori_u_heksadekadski(j*4) + ")";
+                    kod.push_back(s);
+                    j++;
+                }
+            }
+
         }
         else{
             greska(node);
@@ -2731,15 +2765,19 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
                     adresa[identifikator] = "G_" + identifikator; //#ret
                     brojPushevaArray += 4;
                 }
-                for(int i = stoi(node->djeca[0]->djeca[2]->svojstva->leks_jedinka); i >= 0; i--){
+                int j = 0;
+                for(int i = 0; i < stoi(node->djeca[0]->djeca[2]->svojstva->leks_jedinka); i++){
                     string identifikator = trenutniArray + "z" + to_string(i*4) + "z";
                     string s;
-                    if(tablica_node->brojPusheva==i+1){
+                    if(tablica_node->brojPusheva>i){
                         s = "\tPOP R6";
                         kod.push_back(s);
-                        tablica_node->brojPusheva--;
+                        j++;
                         s = "\tSTORE R6, (" + adresa[identifikator] + ")";
                         kod.push_back(s);
+                    }
+                    else{
+                        tablica_node->brojPusheva -= j;
                     }
                 } 
             }
@@ -2969,7 +3007,7 @@ void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
 
         if(!isGlobal){
             string s;
-            s = "\tSTORE R6, (R7+" + to_string(tablica_node->adresa_na_stogu[trenutniArray]+brojPushevaArray) + ")";
+            s = "\tSTORE R6, (R7+" + pretvori_u_heksadekadski(tablica_node->adresa_na_stogu[trenutniArray]+brojPushevaArray) + ")";
             kod.push_back(s);
             brojPushevaArray+=4;
         }
@@ -2985,8 +3023,9 @@ void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<lista_izraza_pridruzivanja>" 
     && node->djeca[1]->svojstva->znak == "ZAREZ" && node->djeca[2]->svojstva->znak == "<izraz_pridruzivanja>"){
-        lista_izraza_pridruzivanja(node->djeca[0], tablica_node);
+        
         izraz_pridruzivanja(node->djeca[2], tablica_node);
+        
 
         node->svojstva->tipovi = node->djeca[0]->svojstva->tipovi;
         node->svojstva->tipovi.push_back(node->djeca[2]->svojstva->tip);
@@ -2994,7 +3033,7 @@ void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
 
         if(!isGlobal){
             string s;
-            s = "\tSTORE R6, (R7+" + to_string(tablica_node->adresa_na_stogu[trenutniArray]+brojPushevaArray) + ")";
+            s = "\tSTORE R6, (R7+" + pretvori_u_heksadekadski(tablica_node->adresa_na_stogu[trenutniArray]+brojPushevaArray) + ")";
             kod.push_back(s);
             brojPushevaArray+=4;
         }
@@ -3004,6 +3043,8 @@ void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
            tablica_node->brojPusheva++;
             kod.push_back(s);
         }
+
+        lista_izraza_pridruzivanja(node->djeca[0], tablica_node);
         
     }
 
