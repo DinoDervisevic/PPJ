@@ -1691,7 +1691,32 @@ void log_i_izraz(Node* node, Tablica_Node* tablica_node){
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<log_i_izraz>" 
     && node->djeca[1]->svojstva->znak == "OP_I" && node->djeca[2]->svojstva->znak == "<bin_ili_izraz>"){
         log_i_izraz(node->djeca[0], tablica_node);
+
+        string s;
+        s = "\tCMP R6, 0";
+        kod.push_back(s);
+        int i = elseLabel;
+        elseLabel++;
+        s = "\tJR_EQ LOG0_" + to_string(i);
+        kod.push_back(s);
+
         bin_ili_izraz(node->djeca[2], tablica_node);
+
+        s = "\tCMP R6, 0";
+        kod.push_back(s);
+        s = "\tJR_EQ LOG0_" + to_string(i);
+        kod.push_back(s);
+        s = "\tMOVE 1, R6";
+        kod.push_back(s);
+        s = "\tJR KRAJLOG_" + to_string(i);
+        kod.push_back(s);
+        s = "LOG0_" + to_string(i);
+        kod.push_back(s);
+        s = "\tMOVE 0, R6";
+        kod.push_back(s);
+        s = "KRAJLOG_" + to_string(i);
+        kod.push_back(s);
+
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
         }
@@ -1718,7 +1743,32 @@ void log_ili_izraz(Node* node, Tablica_Node* tablica_node){
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<log_ili_izraz>" 
     && node->djeca[1]->svojstva->znak == "OP_ILI" && node->djeca[2]->svojstva->znak == "<log_i_izraz>"){
         log_ili_izraz(node->djeca[0], tablica_node);
+
+        string s;
+        s = "\tCMP R6, 0";
+        kod.push_back(s);
+        int i = elseLabel;
+        elseLabel++;
+        s = "\tJR_NE LOG1_" + to_string(i);
+        kod.push_back(s);
+
         log_i_izraz(node->djeca[2], tablica_node);
+
+        s = "\tCMP R6, 0";
+        kod.push_back(s);
+        s = "\tJR_NE LOG1_" + to_string(i);
+        kod.push_back(s);
+        s = "\tMOVE 0, R6";
+        kod.push_back(s);
+        s = "\tJR KRAJLOG_" + to_string(i);
+        kod.push_back(s);
+        s = "LOG1_" + to_string(i);
+        kod.push_back(s);
+        s = "\tMOVE 1, R6";
+        kod.push_back(s);
+        s = "KRAJLOG_" + to_string(i);
+        kod.push_back(s);
+
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
         }
@@ -1804,6 +1854,8 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
                         kod.push_back(s);
                         s = "\tSTORE R" + to_string(registri+1) + ", (R6)";
                         kod.push_back(s);
+                        s = "\tMOVE R" + to_string(registri+1) + ", R6";
+                        kod.push_back(s);
 
                         break;
                     }
@@ -1817,6 +1869,8 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
                         kod.push_back(s);
 
                         s = "\tSTORE R" + to_string(registri+1) + ", (R6)";
+                        kod.push_back(s);
+                        s = "\tMOVE R" + to_string(registri+1) + ", R6";
                         kod.push_back(s);
 
                         break;
@@ -1833,6 +1887,8 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
                         s = "\tADD R6, R7, R6";
                         kod.push_back(s);
                         s = "\tSTORE R" + to_string(registri+1) + ", (R6)";
+                        kod.push_back(s);
+                        s = "\tMOVE R" + to_string(registri+1) + ", R6";
                         kod.push_back(s);
 
                         break;
