@@ -19,7 +19,7 @@ vector<string>kod_za_main;
 
 int registri = 5;
 int vrhStoga = 40000;
-int brojPusheva = 0;
+//int brojPusheva = 0;
 bool retSeDesio = false;
 int elseLabel = 0;
 string trenutniArray = "";
@@ -30,7 +30,7 @@ bool jednom = false;
 
 //
 //
-//MOGUCI PROBLEM: za brojPusheva resetiram na 0 kad se pozove funkcija, no postoji mogucnost da je to krivo, ne mogu sad smislit jel to oekj uvijek
+//MOGUCI PROBLEM: za trenutna_tablica->brojPushevaresetiram na 0 kad se pozove funkcija, no postoji mogucnost da je to krivo, ne mogu sad smislit jel to oekj uvijek
 //
 //
 
@@ -81,6 +81,8 @@ class Tablica_Node{
         map<string, Node*> zapis;
         Tablica_Node* roditelj = nullptr;
         vector<Tablica_Node*> djeca = {};
+
+        int brojPusheva = 0;
 
         map<string, int> adresa_na_stogu;
         int relativni_vrh = 0;
@@ -323,6 +325,8 @@ void ispisi_adredu_na_stogu(Tablica_Node* node){
     for(auto it = node->adresa_na_stogu.begin(); it != node->adresa_na_stogu.end(); it++){
         cout << it->first << " " << it->second << endl;
     }
+        cout << endl;
+
 }
 
 //------------------------------------------------------------------------------------------------
@@ -608,13 +612,14 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             	adresa[identifikator] = "G_" + identifikator;
 			}*/
 
+
             if(node->djeca[0]->svojstva->tip.substr(0, 8) != "funkcija" && !neUzimajAdresu){
                 Tablica_Node* trenutna_tablica = tablica_node;
                 int i = 0;
                 string znakic = node->djeca[0]->svojstva->leks_jedinka;
                 if(true){
                     while(trenutna_tablica != nullptr){
-                        i += trenutna_tablica->adresa_na_stogu.size();
+                        i += trenutna_tablica->adresa_na_stogu.size() +  + trenutna_tablica->brojPusheva;
                         if(trenutna_tablica->roditelj == nullptr){
                             if(adresa.find(node->djeca[0]->svojstva->leks_jedinka+"z0z") == adresa.end()) break;
                             string s;
@@ -629,9 +634,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                             return;
                         }
                         if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka+"z0z") != trenutna_tablica->adresa_na_stogu.end()){
-                            int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka+"z0z"] + brojPusheva*4;
-                            cout << i << endl;
-                            ispisi_adredu_na_stogu(trenutna_tablica);
+                            int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka+"z0z"];
                             if(uzimamArgumente){
                                 cout << "WW";
                                 string s;
@@ -655,7 +658,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                             return;
                         }
                         if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka+"z-1z") != trenutna_tablica->adresa_na_stogu.end()){
-                            int pozicija = i*4 + brojPusheva*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka+"z-1z"];
+                            int pozicija = i*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka+"z-1z"];
                             if(uzimamArgumente){
                                 string s;
                                 s = "\tMOVE %D " + to_string(pozicija) + ", R6";
@@ -680,7 +683,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                     trenutna_tablica = tablica_node;
                     i = 0;
                     while(trenutna_tablica != nullptr){
-                        i += trenutna_tablica->adresa_na_stogu.size();
+                        i += trenutna_tablica->adresa_na_stogu.size() + trenutna_tablica->brojPusheva;
                         if(trenutna_tablica->roditelj == nullptr){
                             string s = "\tLOAD R6, (" + adresa[node->djeca[0]->svojstva->leks_jedinka] + ")";
                             kod.push_back(s);
@@ -688,7 +691,7 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
                         }
                         if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
                             string s;
-                            int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
+                            int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka];
                             if(pozicija < 0){
                                 s = "\tLOAD R6, (R7" + pretvori_u_heksadekadski(pozicija) + ")";
                             }
@@ -734,12 +737,12 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
 			/*if (aktivnaDeklaracija && isGlobal) { // Kao do?li smo do broja tokom deklaracije
                                                 // Definicija globalne varijable, trazi #gl
                     if(trenutniArray != ""){
-                        string identifikator = trenutniArray + "z" + to_string(brojPushevaArray) + "z";
+                        string identifikator = trenutniArray + "z" + to_string(trenutna_tablica->brojPushevaArray) + "z";
                         string s = "G_" + identifikator + "\tDW %D " + broj_str;
                         kod.push_back(s);
                         
                         adresa[identifikator] = "G_" + identifikator; //#ret
-                        brojPushevaArray += 4;
+                        trenutna_tablica->brojPushevaArray += 4;
                         return;
                     }
             	    string identifikator = trenutniIzravniDeklarator->djeca[0]->svojstva->leks_jedinka;
@@ -785,12 +788,12 @@ void primarni_izraz(Node* node, Tablica_Node* tablica_node){
             /*if (aktivnaDeklaracija && isGlobal) { // Kao do?li smo do broja tokom deklaracije
                                                 // Definicija globalne varijable, trazi #gl
                     if(trenutniArray != ""){
-                        string identifikator = trenutniArray + "z" + to_string(brojPushevaArray) + "z";
+                        string identifikator = trenutniArray + "z" + to_string(trenutna_tablica->brojPushevaArray) + "z";
                         string s = "G_" + identifikator + "\tDW %D " + broj_str;
                         kod.push_back(s);
                         
                         adresa[identifikator] = "G_" + identifikator; //#ret
-                        brojPushevaArray += 4;
+                        trenutna_tablica->brojPushevaArray += 4;
                         return;
                     }
             	    string identifikator = trenutniIzravniDeklarator->djeca[0]->svojstva->leks_jedinka;
@@ -850,6 +853,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
 
     //ako je dijete <primarni_izraz>
     if(node->djeca.size() == 1 && node->djeca[0]->svojstva->znak == "<primarni_izraz>"){
+
         primarni_izraz(node->djeca[0], tablica_node); //provjeri primarni izraz
         node->svojstva->tip = node->djeca[0]->svojstva->tip;
         node->svojstva->l_izraz = node->djeca[0]->svojstva->l_izraz;
@@ -886,7 +890,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
         postfiks_izraz(node->djeca[0], tablica_node);
         int i = spremi_komtekst(node);
         kod.push_back("\tCALL F_" + node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka);
-        brojPusheva = 0;
+        tablica_node->brojPusheva = 0;
         obnovi_komtekst(i);
         if(node->djeca[0]->svojstva->tip.substr(0, 8) != "funkcija"){
             greska(node);
@@ -913,7 +917,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
         uzimamArgumente = false;
         string funkcija_ime = node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka;
         kod.push_back("\tCALL F_" + funkcija_ime);
-        brojPusheva = 0;
+        tablica_node->brojPusheva = 0;
         int j = node->djeca[0]->svojstva->argumenti.size();
         kod.push_back("\tADD R7, " + pretvori_u_heksadekadski(j*4) + ", R7"); //micemo argumente sa stoga
         vrhStoga += j*4;
@@ -964,7 +968,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
             
                 int i = 0;
                 while(trenutna_tablica != nullptr){
-                    i += trenutna_tablica->adresa_na_stogu.size();
+                    i += trenutna_tablica->adresa_na_stogu.size() + trenutna_tablica->brojPusheva;
                     if(trenutna_tablica->roditelj == nullptr){
                         string s = "\tSTORE R" + to_string(registri) + ", (" + adresa[node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka] + ")";
                         kod.push_back(s);
@@ -975,7 +979,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
                     }
                     if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
                         string s;
-                        int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
+                        int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka];
                         //cout << trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] << endl;
                         if(pozicija < 0){
                             s = "\tSTORE R" + to_string(registri) + ", (R7" + pretvori_u_heksadekadski(pozicija) + ")";
@@ -1011,7 +1015,7 @@ void lista_argumenata(Node* node, Tablica_Node* tablica_node){
         node->svojstva->argumenti.push_back(node->djeca[0]->svojstva->tip);
 
         kod.push_back("\tPUSH R6");
-        brojPusheva++;
+        tablica_node->brojPusheva++;
         vrhStoga -= 4;
         registri = 5;
 
@@ -1025,7 +1029,7 @@ void lista_argumenata(Node* node, Tablica_Node* tablica_node){
         node->svojstva->argumenti = node->djeca[0]->svojstva->argumenti;
         node->svojstva->argumenti.push_back(node->djeca[2]->svojstva->tip);
         kod.push_back("\tPUSH R6");
-        brojPusheva++;
+        tablica_node->brojPusheva++;
         vrhStoga -= 4;
         registri = 5;
 
@@ -1065,7 +1069,7 @@ void unarni_izraz(Node* node, Tablica_Node* tablica_node){
             
                 int i = 0;
                 while(trenutna_tablica != nullptr){
-                    i += trenutna_tablica->adresa_na_stogu.size();
+                    i += trenutna_tablica->adresa_na_stogu.size() + trenutna_tablica->brojPusheva;
                     if(trenutna_tablica->roditelj == nullptr){
                         string s = "\tSTORE R6, (" + adresa[node->djeca[1]->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka] + ")";
                         kod.push_back(s);
@@ -1076,7 +1080,7 @@ void unarni_izraz(Node* node, Tablica_Node* tablica_node){
                     }
                     if(trenutna_tablica->adresa_na_stogu.find(node->djeca[1]->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
                         string s;
-                        int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[1]->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
+                        int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[1]->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka];
                         //cout << trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] << endl;
                         if(pozicija < 0){
                             s = "\tSTORE R6, (R7" + pretvori_u_heksadekadski(pozicija) + ")";
@@ -1223,12 +1227,12 @@ void multiplikativni_izraz(Node* node, Tablica_Node* tablica_node){
 	    kod.push_back(s);   
         s = "\tPUSH R" + to_string(registri);
         kod.push_back(s);
-        brojPusheva++;
+        tablica_node->brojPusheva++;
 
         cast_izraz(node->djeca[2], tablica_node);
 
         s = "\tPOP R" + to_string(registri);
-        brojPusheva--;
+        tablica_node->brojPusheva--;
         registri--;
 	    kod.push_back(s);
         s = "\tMOVE R6, R" + to_string(registri);
@@ -1299,12 +1303,12 @@ void aditivni_izraz(Node* node, Tablica_Node* tablica_node){
 	    kod.push_back(s);   
         s = "\tPUSH R" + to_string(registri);
         kod.push_back(s);
-        brojPusheva++;
+        tablica_node->brojPusheva++;
 
         multiplikativni_izraz(node->djeca[2], tablica_node); // recentMultiplikativniIzraz trebao bi biti u R6 jer je sve u R6
         
         s = "\tPOP R" + to_string(registri);
-        brojPusheva--;
+        tablica_node->brojPusheva--;
         registri--;
 	    kod.push_back(s);
         s = "\tMOVE R6, R" + to_string(registri);
@@ -1365,13 +1369,13 @@ void odnosni_izraz(Node* node, Tablica_Node* tablica_node){
 	    kod.push_back(s);   
         s = "\tPUSH R" + to_string(registri);
         kod.push_back(s);
-        brojPusheva++;
+        tablica_node->brojPusheva++;
 
 
         aditivni_izraz(node->djeca[2], tablica_node);
 
         s = "\tPOP R" + to_string(registri);
-        brojPusheva--;
+        tablica_node->brojPusheva--;
         registri--;
 	    kod.push_back(s);
         s = "\tMOVE R6, R" + to_string(registri);
@@ -1456,12 +1460,12 @@ void jednakosni_izraz(Node* node, Tablica_Node* tablica_node){
 	    kod.push_back(s);   
         s = "\tPUSH R" + to_string(registri);
         kod.push_back(s);
-        brojPusheva++;
+        tablica_node->brojPusheva++;
 
         odnosni_izraz(node->djeca[2], tablica_node);
 
         s = "\tPOP R" + to_string(registri);
-        brojPusheva--;
+        tablica_node->brojPusheva--;
         registri--;
 	    kod.push_back(s);
         s = "\tMOVE R6, R" + to_string(registri);
@@ -1536,12 +1540,12 @@ void bin_i_izraz(Node* node, Tablica_Node* tablica_node){
 	    kod.push_back(s);   
         s = "\tPUSH R" + to_string(registri);
         kod.push_back(s);
-        brojPusheva++;
+        tablica_node->brojPusheva++;
         
         jednakosni_izraz(node->djeca[2], tablica_node);
 
         s = "\tPOP R" + to_string(registri);
-        brojPusheva--;
+        tablica_node->brojPusheva--;
         registri--;
 	    kod.push_back(s);
         s = "\tMOVE R6, R" + to_string(registri);
@@ -1603,12 +1607,12 @@ void bin_xili_izraz(Node* node, Tablica_Node* tablica_node){
 	    kod.push_back(s);   
         s = "\tPUSH R" + to_string(registri);
         kod.push_back(s);
-        brojPusheva++;
+        tablica_node->brojPusheva++;
 
         bin_i_izraz(node->djeca[2], tablica_node);
 
         s = "\tPOP R" + to_string(registri);
-        brojPusheva--;
+        tablica_node->brojPusheva--;
         registri--;
 	    kod.push_back(s);
         s = "\tMOVE R6, R" + to_string(registri);
@@ -1662,12 +1666,12 @@ void bin_ili_izraz(Node* node, Tablica_Node* tablica_node){
 	    kod.push_back(s);   
         s = "\tPUSH R" + to_string(registri);
         kod.push_back(s);
-        brojPusheva++;
+        tablica_node->brojPusheva++;
 
         bin_xili_izraz(node->djeca[2], tablica_node);
 
         s = "\tPOP R" + to_string(registri);
-        brojPusheva--;
+        tablica_node->brojPusheva--;
         registri--;
 	    kod.push_back(s);
         s = "\tMOVE R6, R" + to_string(registri);
@@ -1815,7 +1819,7 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
 	    kod.push_back(s);   
         s = "\tPUSH R" + to_string(registri);
         kod.push_back(s);
-        brojPusheva++;
+        tablica_node->brojPusheva++;
 
         neUzimajAdresu = true;
         postfiks_izraz(node->djeca[0], tablica_node);
@@ -1823,7 +1827,7 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
 
         s = "\tPOP R" + to_string(registri);
         kod.push_back(s);
-        brojPusheva--;
+        tablica_node->brojPusheva--;
         registri--;
 
         if(node->djeca[0]->djeca.size() == 1){
@@ -1834,7 +1838,7 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
             
                 int i = 0;
                 while(trenutna_tablica != nullptr){
-                    i += trenutna_tablica->adresa_na_stogu.size();
+                    i += trenutna_tablica->adresa_na_stogu.size() + trenutna_tablica->brojPusheva;
                     if(trenutna_tablica->roditelj == nullptr){
                         string s;
                         s = "\tSTORE R6, (" + adresa[node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka] + ")";
@@ -1843,7 +1847,7 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
                     }
                     if(trenutna_tablica->adresa_na_stogu.find(node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka) != trenutna_tablica->adresa_na_stogu.end()){
                         string s;
-                        int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka] + brojPusheva*4;
+                        int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka];
                         //cout << trenutna_tablica->adresa_na_stogu[node->djeca[0]->svojstva->leks_jedinka] << endl;
                         if(pozicija < 0){
                             s = "\tSTORE R6, (R7" + pretvori_u_heksadekadski(pozicija) + ")";
@@ -1860,7 +1864,7 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
             Tablica_Node* trenutna_tablica = tablica_node;
             int i = 0;
                 while(trenutna_tablica != nullptr){
-                    i += trenutna_tablica->adresa_na_stogu.size();
+                    i += trenutna_tablica->adresa_na_stogu.size() + trenutna_tablica->brojPusheva;
                     string broj = node->djeca[0]->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka;
                     if(trenutna_tablica->roditelj == nullptr){
                         s = "\tSHL R6, 2, R6";
@@ -1875,7 +1879,7 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
                         break;
                     }
                     if(trenutna_tablica->adresa_na_stogu.find(broj+"z-1z") != trenutna_tablica->adresa_na_stogu.end()){
-                        int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[broj+"z-1z"] + brojPusheva*4;
+                        int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[broj+"z-1z"];
                         s = "\tSHL R6, 2, R6";
                         kod.push_back(s);
                         s = "\tLOAD R" + to_string(registri-1) + ", (R7+" + pretvori_u_heksadekadski(pozicija) +")";
@@ -1891,7 +1895,7 @@ void izraz_pridruzivanja(Node* node, Tablica_Node* tablica_node){
                         break;
                     }
                     if(trenutna_tablica->adresa_na_stogu.find(broj+"z0z") != trenutna_tablica->adresa_na_stogu.end()){
-                        int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[broj+"z0z"] + brojPusheva*4;
+                        int pozicija = (i)*4 - trenutna_tablica->adresa_na_stogu[broj+"z0z"];
                         string s;
                         s = "\tSHL R6, 2, R6";
                         kod.push_back(s);
@@ -2005,6 +2009,7 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
                     j++;
                     if(tablica_node->adresa_na_stogu.find(node.first+"z0z") != tablica_node->adresa_na_stogu.end()){
                         int z = 1;
+
                         while(true){
                             if(tablica_node->adresa_na_stogu.find(node.first+"z"+to_string(z)+"z") != tablica_node->adresa_na_stogu.end()){
                                 j++;
@@ -2316,7 +2321,7 @@ void naredba_skoka(Node* node, Tablica_Node* tablica_node){
         tablica_node = tablica_node->roditelj;
         }
 
-        //int pomoc = tablica_node->adresa_na_stogu.size() + brojPusheva + tablica_node->adresa_na_stogu["callback funkcije"]/4;
+        //int pomoc = tablica_node->adresa_na_stogu.size() + trenutna_tablica->brojPusheva + tablica_node->adresa_na_stogu["callback funkcije"]/4;
         
         string s = "\tADD R7, " + pretvori_u_heksadekadski(j*4) + ", R7";
         kod.push_back(s);
@@ -2694,10 +2699,10 @@ void init_deklarator(Node* node, Tablica_Node* tablica_node){
                 for(int i = stoi(node->djeca[0]->djeca[2]->svojstva->leks_jedinka); i >= 0; i--){
                     string identifikator = trenutniArray + "z" + to_string(i*4) + "z";
                     string s;
-                    if(brojPusheva==i+1){
+                    if(tablica_node->brojPusheva==i+1){
                         s = "\tPOP R6";
                         kod.push_back(s);
-                        brojPusheva--;
+                        tablica_node->brojPusheva--;
                         s = "\tSTORE R6, (" + adresa[identifikator] + ")";
                         kod.push_back(s);
                     }
@@ -2906,6 +2911,17 @@ void inicijalizator(Node* node, Tablica_Node* tablica_node){
     else{
         greska(node);
     }
+
+    string obrisi = "";
+
+    for(auto nes : tablica_node->adresa_na_stogu){
+        if(nes.second == 0){
+            obrisi = nes.first;
+            break;
+        }
+    }
+    if(obrisi != "") tablica_node->adresa_na_stogu.erase(obrisi);
+
 }
 
 void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
@@ -2925,15 +2941,18 @@ void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
         else{
             string s;
             s = "\tPUSH R6";
-            brojPusheva++;
+            tablica_node->brojPusheva++;
             kod.push_back(s);
         }
+
+        
     }
 
     else if(node->djeca.size() == 3 && node->djeca[0]->svojstva->znak == "<lista_izraza_pridruzivanja>" 
     && node->djeca[1]->svojstva->znak == "ZAREZ" && node->djeca[2]->svojstva->znak == "<izraz_pridruzivanja>"){
-        
+        lista_izraza_pridruzivanja(node->djeca[0], tablica_node);
         izraz_pridruzivanja(node->djeca[2], tablica_node);
+
         node->svojstva->tipovi = node->djeca[0]->svojstva->tipovi;
         node->svojstva->tipovi.push_back(node->djeca[2]->svojstva->tip);
         node->svojstva->broj_elemenata = node->djeca[0]->svojstva->broj_elemenata + 1;
@@ -2947,10 +2966,10 @@ void lista_izraza_pridruzivanja(Node* node, Tablica_Node* tablica_node){
         else{
             string s;
             s = "\tPUSH R6";
-            brojPusheva++;
+           tablica_node->brojPusheva++;
             kod.push_back(s);
         }
-        lista_izraza_pridruzivanja(node->djeca[0], tablica_node);
+        
     }
 
     else{
