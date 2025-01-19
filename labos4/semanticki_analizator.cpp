@@ -1891,6 +1891,16 @@ void slozena_naredba(Node* node, Tablica_Node* tablica_node){
             for(auto node : nova_tablica->zapis){
                 if(!node.second->svojstva->jeParametar){
                     j++;
+                    if(tablica_node->adresa_na_stogu.find(node.first+"z0z") != tablica_node->adresa_na_stogu.end()){
+                        int z = 1;
+                        while(true){
+                            if(tablica_node->adresa_na_stogu.find(node.first+"z"+to_string(z)+"z") != tablica_node->adresa_na_stogu.end()){
+                                j++;
+                                z++;
+                            }
+                            else break;
+                        }
+                    }
                 } 
             }
             string s = "\tADD R7, " + pretvori_u_heksadekadski(j*4) + ", R7";
@@ -2142,6 +2152,16 @@ void naredba_skoka(Node* node, Tablica_Node* tablica_node){
             for(auto node : tablica_node->zapis){
                 if(!node.second->svojstva->jeParametar){
                     j++;
+                    if(tablica_node->adresa_na_stogu.find(node.first+"z0z") != tablica_node->adresa_na_stogu.end()){
+                        int z = 1;
+                        while(true){
+                            if(tablica_node->adresa_na_stogu.find(node.first+"z"+to_string(z)+"z") != tablica_node->adresa_na_stogu.end()){
+                                j++;
+                                z++;
+                            }
+                            else break;
+                        }
+                    }
                 } 
             }
         tablica_node = tablica_node->roditelj;
