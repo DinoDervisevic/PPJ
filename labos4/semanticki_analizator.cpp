@@ -877,6 +877,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
         postfiks_izraz(node->djeca[0], tablica_node);
         int i = spremi_komtekst(node);
         kod.push_back("\tCALL F_" + node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka);
+        brojPusheva = 0;
         obnovi_komtekst(i);
         if(node->djeca[0]->svojstva->tip.substr(0, 8) != "funkcija"){
             greska(node);
@@ -901,6 +902,7 @@ void postfiks_izraz(Node* node, Tablica_Node* tablica_node){
         lista_argumenata(node->djeca[2], tablica_node);
         string funkcija_ime = node->djeca[0]->djeca[0]->djeca[0]->svojstva->leks_jedinka;
         kod.push_back("\tCALL F_" + funkcija_ime);
+        brojPusheva = 0;
         int j = node->djeca[0]->svojstva->argumenti.size();
         kod.push_back("\tADD R7, " + pretvori_u_heksadekadski(j*4) + ", R7"); //micemo argumente sa stoga
         vrhStoga += j*4;
@@ -997,6 +999,7 @@ void lista_argumenata(Node* node, Tablica_Node* tablica_node){
         izraz_pridruzivanja(node->djeca[0], tablica_node);
         node->svojstva->argumenti.push_back(node->djeca[0]->svojstva->tip);
         kod.push_back("\tPUSH R6");
+        brojPusheva++;
         vrhStoga -= 4;
         registri = 5;
         uzimamArgumente = false;
@@ -1009,6 +1012,7 @@ void lista_argumenata(Node* node, Tablica_Node* tablica_node){
         node->svojstva->argumenti = node->djeca[0]->svojstva->argumenti;
         node->svojstva->argumenti.push_back(node->djeca[2]->svojstva->tip);
         kod.push_back("\tPUSH R6");
+        brojPusheva++;
         vrhStoga -= 4;
         registri = 5;
     }
@@ -1198,7 +1202,45 @@ void multiplikativni_izraz(Node* node, Tablica_Node* tablica_node){
     && (node->djeca[1]->svojstva->znak == "OP_PUTA" || node->djeca[1]->svojstva->znak == "OP_DIJELI" 
     || node->djeca[1]->svojstva->znak == "OP_MOD") && node->djeca[2]->svojstva->znak == "<cast_izraz>"){
         multiplikativni_izraz(node->djeca[0], tablica_node);
+
+        string s;
+        s = "\tMOVE R6, R" + to_string(registri);
+	    kod.push_back(s);   
+        s = "\tPUSH R" + to_string(registri);
+        kod.push_back(s);
+        brojPusheva++;
+
         cast_izraz(node->djeca[2], tablica_node);
+
+        s = "\tPOP R" + to_string(registri);
+        brojPusheva--;
+        registri--;
+	    kod.push_back(s);
+        s = "\tMOVE R6, R" + to_string(registri);
+        kod.push_back(s);
+        registri++;
+
+        s = "\tPUSH R" + to_string(registri);
+        kod.push_back(s);
+        s = "\tPUSH R" + to_string(registri-1);
+        kod.push_back(s);
+        
+        if(node->djeca[1]->svojstva->znak == "OP_PUTA"){
+            s = "\tCALL MUL";
+            kod.push_back(s);
+        }
+        else if(node->djeca[1]->svojstva->znak == "OP_DIJELI"){
+            s = "\tCALL DIV";
+            kod.push_back(s);
+        }
+        else{
+            s = "\tCALL MOD";
+            kod.push_back(s);
+        }
+
+        s = "\tADD R7, 8, R7";
+        kod.push_back(s);
+
         if(!moze_se_pretvoriti(node->djeca[0]->svojstva->tip, "int") || !moze_se_pretvoriti(node->djeca[2]->svojstva->tip, "int")){
             greska(node);
         }
